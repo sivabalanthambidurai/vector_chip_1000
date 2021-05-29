@@ -1,0 +1,17 @@
+//____________________________________________________________________________________________________________________
+//file name : code plans
+//author : sivabalan
+//description : This file includes all the programs that are planned to be executed in the processor vc_1000 
+//____________________________________________________________________________________________________________________
+
+1) A simple for loop with 64 element executing independent arithmetic operation on a single processor.
+Example :-
+  for i from 0 to 63;
+  x[i] = x[i] + C, where C is constant.
+Simualtion time : time required to complete one vector instruction.
+
+2) A simple for loop with 256 element executing independent arithmetic operation on four processor simultaneously.
+Example :-
+  for i from 0 to 255;
+  x[i] = x[i] + C, where C is constant.
+Simualtion time : time required to complete one vector instruction.
