@@ -8,8 +8,7 @@ module memory (input clk,
                input write,
                input [(DATA_FIELD_WIDTH/BYTE)-1:0] we,
                input [ADDR_FIELD_WIDTH-1:0] addr,
-               input [DATA_FIELD_WIDTH-1:0] data,
-                              
+               input [DATA_FIELD_WIDTH-1:0] data,                            
                output [DATA_FIELD_WIDTH-1:0] q
                );
   
