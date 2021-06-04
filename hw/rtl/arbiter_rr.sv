@@ -12,7 +12,7 @@ module arbiter_rr (input clk,
                    output reg [NUM_OF_CORES-1:0] grant
                   );
 
-   logic [NUM_OF_CORES-1:0] masked_request_vector, unmasked_grant, masked_grant;
+   logic [NUM_OF_CORES-1:0] masked_request_vector, unmasked_grant, masked_grant, next_mask_vector;
    logic masked;
 
    ppc_unit next_mask_generator (.clk(clk),
