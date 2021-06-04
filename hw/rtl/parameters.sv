@@ -4,6 +4,9 @@
 //description : This file include the predefined parameter values.
 //____________________________________________________________________________________________________________________
 
+//system config
+parameter NUM_OF_CORES = 4;
+
 //registers
 parameter VECTOR_REG_DEPTH = 64; 
 parameter VECTOR_REG_WIDTH = 64;
