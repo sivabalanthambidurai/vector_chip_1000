@@ -10,7 +10,7 @@ module weight_logic # (parameter VECTOR_IN = 8)
                     (input clk, 
                      input reset,
                      input [VECTOR_IN-1:0] request_vector,
-                     input [VECTOR_REG_DEPTH-1:0] weight [VECTOR_IN-1:0],
+                     input [$clog2(VECTOR_REG_DEPTH):0] weight [VECTOR_IN-1:0],
                      output reg [VECTOR_IN-1:0] grant
                     );
 
@@ -43,7 +43,7 @@ module warbiter_rr # (parameter VECTOR_IN = 8)
                    (input clk,
                     input reset,
                     input [VECTOR_IN-1:0] request_vector,
-                    input [VECTOR_REG_DEPTH-1:0] weight [VECTOR_IN-1:0],
+                    input [$clog2(VECTOR_REG_DEPTH):0] weight [VECTOR_IN-1:0],
                     output reg [VECTOR_IN-1:0] grant
                    );
 
