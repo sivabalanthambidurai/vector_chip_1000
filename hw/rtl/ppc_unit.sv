@@ -16,7 +16,7 @@ module ppc_unit # (parameter VECTOR_IN = 8)
    always_comb begin
       grant = 0;
       for(int i = 1; i < VECTOR_IN; i++) begin
-         grant[i] = request_vector[i] | grant[i-1];
+         grant[i] = request_vector[i-1] | grant[i-1];
       end
    end
  
