@@ -26,6 +26,7 @@ module core (input clk,
   logic [$clog2(VECTOR_REG_DEPTH)-1:0] vector_write_addr_port [NUM_OF_VECTOR_REG-1:0];
   logic [VECTOR_REG_WIDTH-1:0] write_data [NUM_OF_VECTOR_REG-1:0];
   logic [VECTOR_REG_WIDTH-1:0] vector_read_data_port [NUM_OF_VECTOR_REG-1:0];
+  logic vector_read_data_port_vld [NUM_OF_PORT-1:0];
 
   vector_register vector_reg[NUM_OF_VECTOR_REG-1:0] (.clk(clk), 
                                                      .reset(reset),
@@ -35,6 +36,17 @@ module core (input clk,
                                                      .write_data(write_data),
                                                      .reg_data(vector_read_data_port)
                                                     );
+
+
+  crossbar_switch xbar(.clk(clk), 
+                       .reset(reset),
+
+                       .vector_read_addr_port(vector_read_addr_port),
+                       .vector_write_port(vector_write_port),
+                       .vector_write_addr_port(vector_write_addr_port),
+                       .write_data(write_data),
+                       .rsp_vld(vector_read_data_port_vld)
+                      );
 
 
    

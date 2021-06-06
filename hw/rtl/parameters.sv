@@ -6,6 +6,7 @@
 
 //system config
 parameter NUM_OF_CORES = 4;
+parameter NUM_OF_PORT = 8;
 
 //registers
 parameter VECTOR_REG_DEPTH = 64; 
@@ -48,6 +49,7 @@ typedef struct packed {
     stride_type_t stride_type;
     bit [$clog2(NUM_OF_VECTOR_REG)-1:0] vec_reg_ptr;
     bit [ADDR_FIELD_WIDTH-1:0] addr;
+    bit [VECTOR_REG_DEPTH-1:0] data;
 } cntrl_req_t;
 
 `define flip_flop(clk, reset, in, out)\

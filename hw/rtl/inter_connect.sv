@@ -29,11 +29,12 @@ module inter_connect (input clk,
 
    logic [NUM_OF_CORES-1:0] memory_request_grant;
 
-   arbiter_rr memory_request_arbiter(.clk(clk),
-                                     .reset(reset),
-                                     .request_vector({core3_req.vld, core2_req.vld, core1_req.vld, core0_req.vld}),
-                                     .grant(memory_request_grant)
-                                    );
+   arbiter_rr # (.VECTOR_IN(NUM_OF_CORES))
+              memory_request_arbiter (.clk(clk),
+                                      .reset(reset),
+                                      .request_vector({core3_req.vld, core2_req.vld, core1_req.vld, core0_req.vld}),
+                                      .grant(memory_request_grant)
+                                     );
 
 
    //cores to memory request interface

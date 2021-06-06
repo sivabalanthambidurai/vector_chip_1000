@@ -13,6 +13,11 @@ module vector_load_store_unit (input clk,
                                input cntrl_req_t cntrl_req,
                                output reg buffer_full,
 
+                               //vector register interface
+                               input reg_rsp_vld,
+                               input [VECTOR_REG_WIDTH-1:0] reg_rsp_data,
+                               output cntrl_req_t reg_req,
+
                                //memory request interface
                                input request_t mem_rsp,
                                output reg rsp_rcvd,
