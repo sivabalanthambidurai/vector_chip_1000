@@ -54,9 +54,10 @@ module crossbar_switch (input clk,
        else begin
           for(int i = 0; i<NUM_OF_PORT; i++) begin
              rsp_vld[i] <= |grant[i];
-             if(rsp_vld[i]) begin
-                for(int j=0; j<NUM_OF_VECTOR_REG; j++)
-                   rsp_addr_port[i] <= j;
+             if(|grant[i]) begin
+                for(int j=0; j<NUM_OF_VECTOR_REG; j++) begin
+                   if(grant[i][j]) rsp_addr_port[i] <= j;
+                end
              end
           end
        end
