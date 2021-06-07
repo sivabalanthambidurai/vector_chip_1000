@@ -60,3 +60,34 @@ begin\
    else\
       out <= in;\
 end
+
+//vector_chip instructions
+typedef enum bit [7:0] {
+   NO_OP = 0,
+   ADDVVD = 1, ADDVSD = 2,
+   SUBVVD = 3, SUBVSD = 4, SUBSVD = 5, 
+   MULVVD = 6, MULVSD = 7,
+   DIVVVD = 8, DIVVSD = 9, DIVSVD = 10,
+   LV = 11, LVI = 12, LVWS = 13, 
+   SV = 14, SVI = 15, SVWS = 16,
+   SEQVVD = 17, SNEVVD = 18, SGTVVD = 19, SLTVVD = 20, SGEVVD = 21, SLEVVD = 22,
+   SEQVSD = 23, SNEVSD = 24, SGTVSD = 25, SLTVSD = 26, SGEVSD = 27, SLEVSD = 28,
+   POP = 29, 
+   CVM = 30, 
+   MTC1 = 31, MFC1 = 32,
+   MVTM = 33, MVFM = 34
+ } vopcode_t;
+
+ //32 general purpose scalar registers
+ typedef enum bit [4:0] { R0,  R1,  R2,  R3,  R4,  R5,  R6,  R7,
+                          R8,  R9,  R10, R11, R12, R13, R14, R15,
+                          R16, R17, R18, R19, R20, R21, R22, R23,
+                          R24, R25, R26, R27, R28, R29, R30, R31 } s_register_t;
+
+ //32 floating point registers
+ typedef enum bit [4:0] { F0,  F1,  F2,  F3,  F4,  F5,  F6,  F7,
+                          F8,  F9,  F10, F11, F12, F13, F14, F15,
+                          F16, F17, F18, F19, F20, F21, F22, F23,
+                          F24, F25, F26, F27, F28, F29, F30, F31 } f_register_t;
+
+ typedef enum bit [2:0] { V0, V1, V2, V3, V4, V5, V6, V7 } v_register_t;
