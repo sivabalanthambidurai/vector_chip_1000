@@ -28,18 +28,25 @@ module inter_connect (input clk,
 
 
    logic [NUM_OF_CORES-1:0] memory_request_grant;
+   logic [2*NUM_OF_CORES-1:0] weight [NUM_OF_CORES-1:0];
 
-   arbiter_rr # (.VECTOR_IN(NUM_OF_CORES))
-              memory_request_arbiter (.clk(clk),
-                                      .reset(reset),
-                                      .request_vector({core3_req.vld, core2_req.vld, core1_req.vld, core0_req.vld}),
-                                      .grant(memory_request_grant)
+   assign weight[0] = core0_req.access_length;
+   assign weight[1] = core1_req.access_length;
+   assign weight[2] = core2_req.access_length;
+   assign weight[3] = core3_req.access_length;
+
+   warbiter_rr # (.VECTOR_IN(NUM_OF_CORES))
+               memory_request_arbiter (.clk(clk),
+                                       .reset(reset),
+                                       .request_vector({core3_req.vld, core2_req.vld, core1_req.vld, core0_req.vld}),
+                                       .weight(weight),
+                                       .grant(memory_request_grant)
                                      );
 
 
    //cores to memory request interface
    always_comb begin
-      unique casez(memory_request_grant)
+      unique case(memory_request_grant)
       {NUM_OF_CORES{1'b0}}: mem_req = 'h0;
       {NUM_OF_CORES{1'b1 << 0}}: mem_req = core0_req;
       {NUM_OF_CORES{1'b1 << 1}}: mem_req = core1_req;

@@ -20,7 +20,7 @@ module crossbar_switch (input clk,
                        );
 
     logic [NUM_OF_PORT-1:0] request [NUM_OF_VECTOR_REG], grant [NUM_OF_VECTOR_REG];
-    logic [$clog2(VECTOR_REG_DEPTH):0] weight [NUM_OF_PORT-1:0];
+    logic [NUM_OF_PORT-1:0] weight [NUM_OF_PORT-1:0];
 
     always_comb begin
         for(int i = 0; i<NUM_OF_PORT; i++) begin
@@ -32,7 +32,7 @@ module crossbar_switch (input clk,
     end
     always_comb begin
        for(int i = 0; i<NUM_OF_VECTOR_REG; i++)
-          weight[i] = vec_reg_req_port[i].access_length[6:0];
+          weight[i] = vec_reg_req_port[i].access_length;
     end 
 
     warbiter_rr #(.VECTOR_IN(NUM_OF_PORT))

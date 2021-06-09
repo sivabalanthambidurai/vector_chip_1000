@@ -20,6 +20,19 @@ parameter LOAD_STORE_BUFFER_DEPTH = 64;
 parameter REQUEST_COUNTER_WIDTH = 8;
 parameter REQUEST_LENGHT_WIDTH = 8;
 
+//cache
+parameter TAG_BIT_WIDTH = 5;//to address a maximum of 32 tag.
+parameter SET_BIT_WIDTH = 5;//to address a maximum of 32 set.
+parameter CACHE_BLOCK_SIZE = 8;
+parameter MAX_ASSOCIATIVITY = 32;
+parameter CACHE_SIZE = 2048;
+typedef enum { ONE_WAY_ASSOCIATIVITY = 0,
+               TWO_WAY_ASSOCIATIVITY = 1,
+               FOUR_WAY_ASSOCIATIVITY = 2,
+               EIGHT_WAY_ASSOCIATIVITY = 3,
+               SIXTEEN_WAY_ASSOCIATIVITY = 4,
+               THIRTYTWO_WAY_ASSOCIATIVITY = 5 } associativity_t;
+
 //memory
 parameter BYTE = 8;
 parameter ADDR_FIELD_WIDTH = 16;
@@ -27,6 +40,8 @@ parameter DATA_FIELD_WIDTH = 64;
 
 //INTERFACE
 parameter ACCESS_ID_WIDTH = 8;
+//0 to 63   :core load and store ids
+//64 to 127 :core icache ids
 parameter CORE_ID_WIDTH = 4;
 
 typedef enum { NULL_ACCESS, READ_REQ, WRITE_REQ, READ_RSP, WRITE_RSP} access_type_t;
@@ -35,6 +50,7 @@ typedef enum { NON_STRIDE, STRIDE, INDEX} stride_type_t;
 typedef struct packed {
     bit vld;
     access_type_t access_type;
+    bit [REQUEST_LENGHT_WIDTH-1:0] access_length;
     bit [ACCESS_ID_WIDTH-1:0] access_id;
     bit [CORE_ID_WIDTH-1:0] core_id;
     bit [ADDR_FIELD_WIDTH-1:0] addr;
