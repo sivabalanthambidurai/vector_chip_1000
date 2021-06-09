@@ -89,11 +89,11 @@ module core # (parameter CORE_ID = 0)
                      .reset(reset),
                      .set_associativity('0),
                      .associativity(),
-                     //pipeline bit interface
+                     //pipeline interface
                      .req(),
                      .busy(),//will not accept new request when cache miss.
                      .rsp(),
-                     //memory bit interface
+                     //memory interface
                      .mem_rsp(icache_mem_rsp),
                      .req_grant(grant[0]),
                      .mem_req(icache_mem_req)

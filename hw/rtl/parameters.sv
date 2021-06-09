@@ -6,6 +6,7 @@
 
 //system config
 parameter NUM_OF_CORES = 4;
+parameter NUM_OF_LANES = 4;
 parameter NUM_OF_PORT = 8;
 parameter MEM_REQ_PER_CORE = 2;
 
