@@ -6,7 +6,8 @@
 //Source : Design of an adjustable-way set-associative cache(IEEE)
 //____________________________________________________________________________________________________________________
 
-module cache (input clk,
+module cache # (parameter CORE_ID = 0)
+             (input clk,
               input reset,
               //cache associativity
               input set_associativity,
@@ -17,7 +18,7 @@ module cache (input clk,
               output request_t rsp,
               //memory bit interface
               input request_t mem_rsp,
-              input grant,
+              input req_grant,
               output request_t mem_req
              );
 
@@ -202,12 +203,12 @@ module cache (input clk,
           mem_req <= 0;
           req_sent_count <= 0;
        end
-       else if((!mem_req.vld || (mem_req.vld && grant)) && cache_miss && |block_en && (req_sent_count < CACHE_BLOCK_SIZE)) begin
+       else if((!mem_req.vld || (mem_req.vld && req_grant)) && cache_miss && |block_en && (req_sent_count < CACHE_BLOCK_SIZE)) begin
           mem_req.vld <= 1;
           mem_req.access_type <= READ_REQ;
           mem_req.access_length <= CACHE_BLOCK_SIZE;
           mem_req.access_id <= {2'b01, req_sent_count};//64 to 127 for icache.
-          mem_req.core_id <= 0;//TODO: FIXME
+          mem_req.core_id <= CORE_ID;
           mem_req.addr <= req_ff.addr + req_sent_count;
           mem_req.byte_en <= 0;
           mem_req.data <= 0;

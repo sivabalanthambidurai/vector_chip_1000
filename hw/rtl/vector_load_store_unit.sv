@@ -21,7 +21,6 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
 
                                //memory request interface
                                input request_t mem_rsp,
-                               output reg rsp_rcvd,
                                input req_grant,
                                output request_t mem_req
                                );
@@ -43,7 +42,6 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
         rsp_rcvd_count <= 'h0;
         reg_req_sent <= 0;
         reg_rsp_rcvd <= 0;
-        rsp_rcvd <= 0;
      end
      else if(cntrl_req.vld && !buffer_full) begin
         cntrl_req_ff <= cntrl_req;
@@ -56,12 +54,8 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
      else begin
         if(mem_req.vld)
            req_sent_count <= req_sent_count + 1;
-        if(mem_rsp.vld) begin
+        if(mem_rsp.vld)
            rsp_rcvd_count <= rsp_rcvd_count + 1;
-           rsp_rcvd <= 1;
-        end
-        else
-          rsp_rcvd <= 0;
         if(reg_req.vld)
            reg_req_sent <= reg_req_sent + 1;
         if(reg_rsp_vld)

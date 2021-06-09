@@ -31,6 +31,13 @@ module core # (parameter CORE_ID = 0)
   logic [$clog2(VECTOR_REG_DEPTH)-1:0] vector_rsp_addr_port [NUM_OF_VECTOR_REG-1:0];
   //req and rsp port.
   cntrl_req_t vec_reg_req_port [NUM_OF_PORT-1:0];
+  //core to memory requests
+  request_t load_store_unit_mem_req, icache_mem_req;
+  //memory to core responses
+  request_t load_store_unit_mem_rsp, icache_mem_rsp;
+  logic [MEM_REQ_PER_CORE-1:0] grant;
+  //grant[0] - icahe (highest priority),
+  //grant[1] - load and store unit (lowest priority)
 
   vector_register vector_reg[NUM_OF_VECTOR_REG-1:0] (.clk(clk), 
                                                      .reset(reset),
@@ -62,7 +69,7 @@ module core # (parameter CORE_ID = 0)
                          load_store_unit(.clk(clk),
                                          .reset(reset),
 
-                                        //execution unit interface
+                                        //pipeline interface
                                         .cntrl_req(),
                                         .buffer_full(),
 
@@ -72,10 +79,61 @@ module core # (parameter CORE_ID = 0)
                                         .reg_req(vec_reg_req_port[0]),
 
                                         //memory request interface
-                                        .mem_rsp(),
-                                        .rsp_rcvd(),
-                                        .req_grant(),
-                                        .mem_req()
+                                        .mem_rsp(load_store_unit_mem_rsp),
+                                        .req_grant(grant[1]),
+                                        .mem_req(load_store_unit_mem_req)
                                         );
+
+    cache #(.CORE_ID(CORE_ID))
+             icache (.clk(clk),
+                     .reset(reset),
+                     .set_associativity('0),
+                     .associativity(),
+                     //pipeline bit interface
+                     .req(),
+                     .busy(),//will not accept new request when cache miss.
+                     .rsp(),
+                     //memory bit interface
+                     .mem_rsp(icache_mem_rsp),
+                     .req_grant(grant[0]),
+                     .mem_req(icache_mem_req)
+                    );
+
+   arbiter_p #(.VECTOR_IN(MEM_REQ_PER_CORE))
+             core_arbiter (.clk(clk),
+                           .request_vector({load_store_unit_mem_req.vld, icache_mem_req.vld}),
+                           .grant(grant)
+                          );
+
+   //request from core to memory.
+   always_ff @(posedge clk or negedge reset) begin
+      if(!reset) begin
+         mem_req <= 0;
+      end
+      else begin
+         unique case(grant)
+            0: mem_req <= 0;
+            1: mem_req <= icache_mem_req;
+            2: mem_req <= load_store_unit_mem_req;
+         endcase
+      end
+   end
+
+   //response from memory to core.
+   always_ff @(posedge clk or negedge reset) begin
+      if(!reset) begin
+         icache_mem_rsp <= 0;
+         load_store_unit_mem_rsp <= 0;
+      end
+      else begin
+         if(mem_rsp.vld)
+         begin
+            if(mem_rsp.access_id[6])//access_id(6) = 1 is a icahe response 
+               icache_mem_rsp <= mem_rsp;
+            else
+               load_store_unit_mem_rsp <= mem_rsp;
+         end
+      end
+   end 
 
 endmodule

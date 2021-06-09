@@ -47,11 +47,11 @@ module inter_connect (input clk,
    //cores to memory request interface
    always_comb begin
       unique case(memory_request_grant)
-      {NUM_OF_CORES{1'b0}}: mem_req = 'h0;
-      {NUM_OF_CORES{1'b1 << 0}}: mem_req = core0_req;
-      {NUM_OF_CORES{1'b1 << 1}}: mem_req = core1_req;
-      {NUM_OF_CORES{1'b1 << 2}}: mem_req = core2_req;
-      {NUM_OF_CORES{1'b1 << 3}}: mem_req = core3_req;
+      0: mem_req = 'h0;
+      1: mem_req = core0_req;
+      2: mem_req = core1_req;
+      4: mem_req = core2_req;
+      8: mem_req = core3_req;
       endcase
    end
 
