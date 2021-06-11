@@ -17,6 +17,16 @@ parameter SCALAR_REG_DEPTH = 32;
 parameter SCALAR_REG_WIDTH = 64;
 parameter NUM_OF_VECTOR_REG = 8;
 
+//pipeline
+parameter PIPELINE_OPCODE_WIDTH = 32;
+typedef bit [PIPELINE_OPCODE_WIDTH-1:0] opcode_t; 
+
+//core register
+typedef struct packed {
+   bit [31:16] RESERVED;
+   bit [15:0] ADDR;
+} core_base_addr_t;
+
 //load and store
 parameter LOAD_STORE_BUFFER_DEPTH = 64;
 parameter REQUEST_COUNTER_WIDTH = 8;
@@ -46,7 +56,7 @@ parameter ACCESS_ID_WIDTH = 8;
 //64 to 127 :core icache ids
 parameter CORE_ID_WIDTH = 4;
 
-typedef enum { NULL_ACCESS, READ_REQ, WRITE_REQ, READ_RSP, WRITE_RSP} access_type_t;
+typedef enum { NULL_ACCESS, READ_REQ, WRITE_REQ, READ_RSP, WRITE_RSP, THREAD_ACTIVATE, THREAD_HALT} access_type_t;
 typedef enum { NON_STRIDE, STRIDE, INDEX} stride_type_t;
 
 typedef struct packed {
@@ -93,7 +103,8 @@ typedef enum bit [7:0] {
    POP = 29, 
    CVM = 30, 
    MTC1 = 31, MFC1 = 32,
-   MVTM = 33, MVFM = 34
+   MVTM = 33, MVFM = 34,
+   PIPE_ACTIVATE =35, PIPE_HALT = 36
  } vopcode_t;
 
  //32 general purpose scalar registers
@@ -108,4 +119,4 @@ typedef enum bit [7:0] {
                           F16, F17, F18, F19, F20, F21, F22, F23,
                           F24, F25, F26, F27, F28, F29, F30, F31 } f_register_t;
 
- typedef enum bit [2:0] { V0, V1, V2, V3, V4, V5, V6, V7 } v_register_t;
+ typedef enum bit [3:0] { V0, V1, V2, V3, V4, V5, V6, V7, VLR, VM} v_register_t;

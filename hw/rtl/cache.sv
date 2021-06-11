@@ -195,6 +195,9 @@ module cache # (parameter CORE_ID = 0)
           rsp.byte_en <= 0;
           rsp.data <= mem_rsp.data;
        end
+       else begin
+          rsp <= 0;
+       end
     end
 
     //request to memory for miss
