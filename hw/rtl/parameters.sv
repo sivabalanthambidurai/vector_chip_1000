@@ -19,13 +19,7 @@ parameter NUM_OF_VECTOR_REG = 8;
 
 //pipeline
 parameter PIPELINE_OPCODE_WIDTH = 32;
-typedef bit [PIPELINE_OPCODE_WIDTH-1:0] opcode_t; 
-
-//core register
-typedef struct packed {
-   bit [31:16] RESERVED;
-   bit [15:0] ADDR;
-} core_base_addr_t;
+typedef bit [PIPELINE_OPCODE_WIDTH-1:0] opcode_t;
 
 //load and store
 parameter LOAD_STORE_BUFFER_DEPTH = 64;
