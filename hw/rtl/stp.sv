@@ -25,8 +25,8 @@ module stp (input clk,
 
                       //execution stage interface
                       .opcode_vld(),
-                      .opcode1(),
-                      .opcode2()
+                      .opcode0(),
+                      .opcode1()
 
                      );
 

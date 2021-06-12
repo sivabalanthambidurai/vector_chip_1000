@@ -22,9 +22,10 @@ module ifetch_unit (input clk,
                     output request_t icache_req,
 
                     //execution stage interface
+                    input inst_buff_full,
                     output reg opcode_vld,
-                    output opcode_t opcode1,
-                    output opcode_t opcode2
+                    output opcode_t opcode0,
+                    output opcode_t opcode1
 
                    ); 
  
@@ -38,7 +39,7 @@ module ifetch_unit (input clk,
       else if (!pipe_active && tm_req.vld && (tm_req.access_type == THREAD_ACTIVATE))
          pipe_active <= 1;
       //immediatly stop the fetch if we see a PIPE_HALT instruction
-      else if (pipe_active && ((opcode1 == PIPE_HALT) || (opcode2 == PIPE_HALT)))
+      else if (pipe_active && ((opcode0 == PIPE_HALT) || (opcode1 == PIPE_HALT)))
          pipe_active <= 0;
    end
 
@@ -46,7 +47,7 @@ module ifetch_unit (input clk,
    always_ff @(posedge clk or negedge reset) begin
       if(!reset)
          tm_rsp <= 0;
-      else if (pipe_active && (opcode1 != PIPE_HALT) && (opcode2 != PIPE_HALT)) begin
+      else if (pipe_active && (opcode0 != PIPE_HALT) && (opcode1 != PIPE_HALT)) begin
          tm_rsp.vld <= 1;
          tm_rsp.access_type <= THREAD_HALT;
          tm_rsp.access_length <= 0;
@@ -66,7 +67,7 @@ module ifetch_unit (input clk,
          icache_req <= 0;
          current_pc <= 0;
       end
-      else if (pipe_active && !icache_busy && (opcode1 != PIPE_HALT) && (opcode2 != PIPE_HALT)) begin
+      else if (!inst_buff_full && pipe_active && !icache_busy && (opcode0 != PIPE_HALT) && (opcode1 != PIPE_HALT)) begin
          icache_req.vld <= 1;
          icache_req.access_type <= NULL_ACCESS;
          icache_req.access_length <= 0;
@@ -86,7 +87,7 @@ module ifetch_unit (input clk,
    //a single cycle indicating a valid opcode to the execution unit 
    assign  opcode_vld = icache_rsp.vld;
    //execution unit interface
-   assign opcode1 = (icache_rsp.vld) ? icache_rsp.data[31:0] : 0;
-   assign opcode2 = (icache_rsp.vld) ? icache_rsp.data[63:32] : 0;
+   assign opcode0 = (icache_rsp.vld) ? icache_rsp.data[31:0] : 0;
+   assign opcode1 = (icache_rsp.vld) ? icache_rsp.data[63:32] : 0;
 
 endmodule
