@@ -41,6 +41,14 @@ module core # (parameter CORE_ID = 0)
   //grant[0] - icahe (highest priority),
   //grant[1] - load and store unit (lowest priority)
 
+  //icache interface
+  request_t icache_req, icache_rsp;
+  logic icache_busy;
+
+  //load and store unit       
+  logic load_store_unit_busy;
+  cntrl_req_t load_store_req;
+
   vector_register vector_reg[NUM_OF_VECTOR_REG-1:0] (.clk(clk), 
                                                      .reset(reset),
                                                      .read_addr(vector_read_addr_port),
@@ -80,8 +88,8 @@ module core # (parameter CORE_ID = 0)
                                          .reset(reset),
 
                                         //pipeline interface
-                                        .cntrl_req(),
-                                        .buffer_full(),
+                                        .cntrl_req(load_store_req),
+                                        .buffer_full(load_store_unit_busy),
 
                                         //vector register interface
                                         .reg_req_grant(reg_req_grant[0]),
@@ -100,11 +108,26 @@ module core # (parameter CORE_ID = 0)
     stp stp_thread (.clk(clk),
                     .reset(reset),
 
+                    //load and store unit interface
+                    .load_store_unit_busy(load_store_unit_busy),
+                    .load_store_req(load_store_req),
+
                     //vector register interface
                     .reg_req_grant(reg_req_grant[4:1]),
                     .reg_rsp_vld(vector_read_data_port_vld[4:1]),
                     .reg_rsp_data(vector_read_data_map_port[4:1]),
-                    .reg_req(vec_reg_req_port[4:1])
+                    .reg_req(vec_reg_req_port[4:1]),
+
+                    .wb_reg_req_grant(reg_req_grant[7:5]),
+                    //write back will only do write operation.
+                    .wb_reg_rsp_vld(),
+                    .wb_reg_rsp_data(),
+                    .wb_reg_req(vec_reg_req_port[7:5]),
+
+                    //icache interface
+                    .icache_req(icache_req),
+                    .icache_busy(icache_busy),
+                    .icache_rsp(icache_rsp)
 
                     );  
 
@@ -114,9 +137,9 @@ module core # (parameter CORE_ID = 0)
                      .set_associativity('0),
                      .associativity(),
                      //pipeline interface
-                     .req(),
-                     .busy(),//will not accept new request when cache miss.
-                     .rsp(),
+                     .req(icache_req),
+                     .busy(icache_busy),//will not accept new request when cache miss.
+                     .rsp(icache_rsp),
                      //memory interface
                      .mem_rsp(icache_mem_rsp),
                      .req_grant(grant[0]),

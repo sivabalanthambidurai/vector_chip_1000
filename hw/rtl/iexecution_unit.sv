@@ -13,7 +13,7 @@ module iexecution_unit (input clk,
                         input reset,
 
                         //load and store unit interface
-                        output cntrl_req_t cntrl_req,
+                        output cntrl_req_t load_store_req,
                         input load_store_unit_busy,
 
                         //ifetch unit interface 
@@ -305,13 +305,13 @@ module iexecution_unit (input clk,
                              exe_unit_active <= 1;
                           else if(!load_store_unit_busy)
                              exe_unit_active <= 0;
-                          cntrl_req.vld <= 1;
-                          cntrl_req.access_type <= READ_REQ;
-                          cntrl_req.access_length <= 0;
-                          cntrl_req.stride_type <= NON_STRIDE;
-                          cntrl_req.vec_reg_ptr <= v_register_t'(reg1);
-                          cntrl_req.addr <= read_data;
-                          cntrl_req.data <= 0;
+                          load_store_req.vld <= 1;
+                          load_store_req.access_type <= READ_REQ;
+                          load_store_req.access_length <= 0;
+                          load_store_req.stride_type <= NON_STRIDE;
+                          load_store_req.vec_reg_ptr <= v_register_t'(reg1);
+                          load_store_req.addr <= read_data;
+                          load_store_req.data <= 0;
                        end
              LVI     : begin
                        end
@@ -322,13 +322,13 @@ module iexecution_unit (input clk,
                              exe_unit_active <= 1;
                           else
                              exe_unit_active <= 0;
-                          cntrl_req.vld <= 1;
-                          cntrl_req.access_type <= WRITE_REQ;
-                          cntrl_req.access_length <= 0;
-                          cntrl_req.stride_type <= NON_STRIDE;
-                          cntrl_req.vec_reg_ptr <= v_register_t'(reg1);
-                          cntrl_req.addr <= read_data;
-                          cntrl_req.data <= 0;
+                          load_store_req.vld <= 1;
+                          load_store_req.access_type <= WRITE_REQ;
+                          load_store_req.access_length <= 0;
+                          load_store_req.stride_type <= NON_STRIDE;
+                          load_store_req.vec_reg_ptr <= v_register_t'(reg1);
+                          load_store_req.addr <= read_data;
+                          load_store_req.data <= 0;
                        end
              SVI     : begin
                        end
