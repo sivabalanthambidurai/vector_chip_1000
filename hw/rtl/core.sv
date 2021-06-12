@@ -27,6 +27,8 @@ module core # (parameter CORE_ID = 0)
   logic [$clog2(VECTOR_REG_DEPTH)-1:0] vector_write_addr_port [NUM_OF_VECTOR_REG-1:0];
   logic [VECTOR_REG_WIDTH-1:0] write_data [NUM_OF_VECTOR_REG-1:0];
   logic [VECTOR_REG_WIDTH-1:0] vector_read_data_port [NUM_OF_VECTOR_REG-1:0];
+  logic [VECTOR_REG_WIDTH-1:0] vector_read_data_map_port [NUM_OF_VECTOR_REG-1:0];
+  logic reg_req_grant [NUM_OF_PORT-1:0];
   logic vector_read_data_port_vld [NUM_OF_PORT-1:0];
   logic [$clog2(VECTOR_REG_DEPTH)-1:0] vector_rsp_addr_port [NUM_OF_VECTOR_REG-1:0];
   //req and rsp port.
@@ -47,7 +49,14 @@ module core # (parameter CORE_ID = 0)
                                                      .write_data(write_data),
                                                      .reg_data(vector_read_data_port)
                                                     );
-
+  
+  vector_mapper reg_map (.clk(clk),
+                         .reset(reset),
+                         .vld(vector_read_data_port_vld),
+                         .addr_port(vector_rsp_addr_port),
+                         .data_port_in(vector_read_data_port),
+                         .data_port_out(vector_read_data_map_port) 
+                        );
 
   crossbar_switch xbar(.clk(clk), 
                        .reset(reset),
@@ -60,6 +69,7 @@ module core # (parameter CORE_ID = 0)
                        .vector_write_port(vector_write_port),
                        .vector_write_addr_port(vector_write_addr_port),
                        .write_data(write_data),
+                       .reg_req_grant(reg_req_grant),
                        .rsp_vld(vector_read_data_port_vld),
                        .rsp_addr_port(vector_rsp_addr_port)
                        );
@@ -74,8 +84,9 @@ module core # (parameter CORE_ID = 0)
                                         .buffer_full(),
 
                                         //vector register interface
+                                        .reg_req_grant(reg_req_grant[0]),
                                         .reg_rsp_vld(vector_read_data_port_vld[0]),
-                                        .reg_rsp_data(vector_read_data_port[vector_rsp_addr_port[0]]),
+                                        .reg_rsp_data(vector_read_data_map_port[0]),
                                         .reg_req(vec_reg_req_port[0]),
 
                                         //memory request interface
@@ -83,6 +94,19 @@ module core # (parameter CORE_ID = 0)
                                         .req_grant(grant[1]),
                                         .mem_req(load_store_unit_mem_req)
                                         );
+
+    
+
+    stp stp_thread (.clk(clk),
+                    .reset(reset),
+
+                    //vector register interface
+                    .reg_req_grant(reg_req_grant[4:1]),
+                    .reg_rsp_vld(vector_read_data_port_vld[4:1]),
+                    .reg_rsp_data(vector_read_data_map_port[4:1]),
+                    .reg_req(vec_reg_req_port[4:1])
+
+                    );  
 
     cache #(.CORE_ID(CORE_ID))
              icache (.clk(clk),

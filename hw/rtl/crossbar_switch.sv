@@ -15,6 +15,7 @@ module crossbar_switch (input clk,
                         output reg vector_write_port [NUM_OF_VECTOR_REG-1:0],
                         output reg [$clog2(VECTOR_REG_DEPTH)-1:0] vector_write_addr_port [NUM_OF_VECTOR_REG-1:0],
                         output reg [VECTOR_REG_WIDTH-1:0] write_data [NUM_OF_VECTOR_REG-1:0],
+                        output reg reg_req_grant [NUM_OF_PORT-1:0],
                         output reg rsp_vld [NUM_OF_PORT-1:0],
                         output reg [$clog2(VECTOR_REG_DEPTH)-1:0] rsp_addr_port [NUM_OF_VECTOR_REG-1:0]                    
                        );

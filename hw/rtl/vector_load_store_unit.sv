@@ -15,6 +15,7 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
                                output reg buffer_full,
 
                                //vector register interface
+                               input reg_req_grant,
                                input reg_rsp_vld,
                                input [VECTOR_REG_WIDTH-1:0] reg_rsp_data,
                                output cntrl_req_t reg_req,
@@ -91,7 +92,7 @@ assign buffer_full = (((request_count != rsp_rcvd_count) && (cntrl_req_ff.access
   always_ff @(posedge clk or negedge reset) begin
      if(!reset)
         reg_req <= 0;
-     else if((!reg_req.vld || (reg_req.vld && mem_rsp.vld)) && (reg_req_sent < request_count)) begin
+     else if(reg_req_grant && (!reg_req.vld || (reg_req.vld && mem_rsp.vld)) && (reg_req_sent < request_count)) begin
         reg_req.vld <= 1;       
         reg_req.access_length <= cntrl_req_ff.access_length;
         reg_req.vec_reg_ptr <= cntrl_req_ff.vec_reg_ptr;

@@ -5,7 +5,14 @@
 //____________________________________________________________________________________________________________________
 
 module stp (input clk,
-            input reset
+            input reset,
+
+            //vector register interface
+            input reg_req_grant [NUM_OF_LANES-1:0],
+            input reg_rsp_vld [NUM_OF_LANES-1:0],
+            input [VECTOR_REG_WIDTH-1:0] reg_rsp_data [NUM_OF_LANES-1:0],
+            output cntrl_req_t reg_req [NUM_OF_LANES-1:0]
+
            ); 
  
    ifetch_unit stp_if(.clk(clk),
