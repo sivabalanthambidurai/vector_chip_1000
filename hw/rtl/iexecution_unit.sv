@@ -27,6 +27,7 @@ module iexecution_unit (input clk,
                         output reg [VECTOR_REG_WIDTH-1:0] data0 [NUM_OF_LANES-1:0],
                         output reg [VECTOR_REG_WIDTH-1:0] data1 [NUM_OF_LANES-1:0],
                         output reg [$clog2(NUM_OF_VECTOR_REG)-1:0] vec_reg_in [NUM_OF_LANES-1:0],
+                        output reg [ADDR_FIELD_WIDTH-1:0] vec_addr,
                         output function_opcode_t functional_opcode [NUM_OF_LANES-1:0],
                         input reg busy [NUM_OF_LANES-1:0],
 
@@ -259,6 +260,7 @@ module iexecution_unit (input clk,
                                 reg_req[0].stride_type <= NON_STRIDE;
                                 reg_req[0].vec_reg_ptr <= v_register_t'(reg1);
                                 reg_req[0].addr <= vector_length;
+                                vec_addr[next_free_lane] <= vector_length;
                                 reg_req[0].data <= 0;
                              end
                              else begin

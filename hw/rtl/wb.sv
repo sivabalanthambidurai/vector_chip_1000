@@ -7,9 +7,10 @@
 module wb (input clk,
            input reset,
            //wb interface
-           input reg result_vld [NUM_OF_LANES-1:0],
-           input reg [$clog2(NUM_OF_VECTOR_REG)-1:0] vec_reg_out [NUM_OF_LANES-1:0],
-           input reg data_out [NUM_OF_LANES-1:0],
+           input  result_vld [NUM_OF_LANES-1:0],
+           input  [$clog2(NUM_OF_VECTOR_REG)-1:0] vec_reg_out [NUM_OF_LANES-1:0],
+           input  [ADDR_FIELD_WIDTH-1:0] vec_addr [NUM_OF_LANES-1:0],
+           input  data_out [NUM_OF_LANES-1:0],
            //vector register interface
            input wb_reg_req_grant [NUM_OF_WB-1:0],
            input wb_reg_rsp_vld [NUM_OF_WB-1:0],
@@ -42,12 +43,12 @@ module wb (input clk,
                wb_req.access_length <= 1;
                wb_req.stride_type <= NON_STRIDE;
                wb_req.vec_reg_ptr <= vec_reg_out[i];
-               wb_req.addr <= 0;//TODO
+               wb_req.addr <= vec_addr[i];
                wb_req.data <= data_out[i];
             end
          end       
       end
-      else begin
+      else if(!wb_full) begin
          wb_req <= 0;
       end
    end
