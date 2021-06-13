@@ -38,7 +38,7 @@ module stp # (parameter CORE_ID = 0)
    logic [VECTOR_REG_WIDTH-1:0] data0 [NUM_OF_LANES-1:0];
    logic [VECTOR_REG_WIDTH-1:0] data1 [NUM_OF_LANES-1:0];
    logic [$clog2(NUM_OF_VECTOR_REG)-1:0] vec_reg_in [NUM_OF_LANES-1:0];
-   logic [ADDR_FIELD_WIDTH-1:0] vec_addr [NUM_OF_LANES-1:0],
+   logic [ADDR_FIELD_WIDTH-1:0] vec_addr [NUM_OF_LANES-1:0];
    function_opcode_t functional_opcode [NUM_OF_LANES-1:0];
    logic busy [NUM_OF_LANES-1:0];
    //wb interface

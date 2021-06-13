@@ -35,6 +35,22 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
   logic request_ready, response_ready;
   logic [REQUEST_COUNTER_WIDTH-1:0] reg_req_sent, reg_rsp_rcvd;
 
+  //memory response.
+  request_t mem_rsp_buffer [VECTOR_REG_DEPTH];
+  logic [$clog2(VECTOR_REG_DEPTH)-1:0] mrsp_buff_wptr, mrsp_buff_rptr;
+  //no need for full and emtpy logic, as there will not be 
+  //more than 64 active request or response. And all the 
+  //load and store are blocking.
+  always_ff @(posedge clk or negedge reset) begin
+     if(!reset) begin
+     end
+     else if (mem_rsp.vld) begin
+        mem_rsp_buffer[mrsp_buff_wptr] <= mem_rsp;
+        mrsp_buff_wptr <= mrsp_buff_wptr + 1;
+     end
+  end
+
+
   always_ff @(posedge clk or negedge reset) begin
      if(!reset) begin
         cntrl_req_ff <= 'h0;
@@ -92,21 +108,22 @@ assign buffer_full = (((request_count != rsp_rcvd_count) && (cntrl_req_ff.access
   always_ff @(posedge clk or negedge reset) begin
      if(!reset)
         reg_req <= 0;
-     else if(reg_req_grant && (!reg_req.vld || (reg_req.vld && mem_rsp.vld)) && (reg_req_sent < request_count)) begin
+     else if((!reg_req.vld || (reg_req.vld && reg_req_grant)) && (reg_req_sent < request_count)) begin
         reg_req.vld <= 1;       
         reg_req.access_length <= cntrl_req_ff.access_length;
         reg_req.vec_reg_ptr <= cntrl_req_ff.vec_reg_ptr;
         reg_req.addr <= cntrl_req.addr + reg_req_sent;
         if(cntrl_req_ff.access_type == READ_REQ) begin
            reg_req.access_type <= WRITE_REQ;
-           reg_req.data <= mem_rsp.data;
+           reg_req.data <= mem_rsp_buffer[mrsp_buff_rptr].data;
+           mrsp_buff_rptr <= mrsp_buff_rptr + 1;
         end
         else if (cntrl_req_ff.access_type == WRITE_REQ) begin
            reg_req.access_type <= READ_REQ;
            reg_req.data <= 0;
         end
      end
-     else if((reg_req_sent == request_count) || mem_rsp.vld)
+     else if(reg_req_sent == request_count)
         reg_req <= 'h0;
   end
 

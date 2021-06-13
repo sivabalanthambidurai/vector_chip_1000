@@ -27,7 +27,7 @@ module iexecution_unit (input clk,
                         output reg [VECTOR_REG_WIDTH-1:0] data0 [NUM_OF_LANES-1:0],
                         output reg [VECTOR_REG_WIDTH-1:0] data1 [NUM_OF_LANES-1:0],
                         output reg [$clog2(NUM_OF_VECTOR_REG)-1:0] vec_reg_in [NUM_OF_LANES-1:0],
-                        output reg [ADDR_FIELD_WIDTH-1:0] vec_addr,
+                        output reg [ADDR_FIELD_WIDTH-1:0] vec_addr [NUM_OF_LANES-1:0],
                         output function_opcode_t functional_opcode [NUM_OF_LANES-1:0],
                         input reg busy [NUM_OF_LANES-1:0],
 
@@ -52,7 +52,8 @@ module iexecution_unit (input clk,
     vopcode_t opcode;
     logic [PIPELINE_OPCODE_WIDTH-1:0] movimm;
     logic [VECTOR_REG_WIDTH-1:0] reg1, reg2, reg3;
-    logic reg1_rcvd, reg2_rcvd, reg3_rcvd;
+    //indicates the register data has been received.
+    logic reg1_rcvd, reg2_rcvd, reg3_rcvd, reg4_rcvd;
 
     //Register : EXE_VECTOR_REG
     //LENGTH : This field indicates the length of the vector operation.
@@ -226,7 +227,6 @@ module iexecution_unit (input clk,
              ADDVVD  : begin
                           if(EXE_VECTOR_REG.LENGTH < vector_length)  begin
                              exe_unit_active <= 1;
-                             vector_length <= vector_length + 1;
                              if(busy[prev_free_lane])
                                 vld[prev_free_lane] <= 0;
                              //register1 rsp
@@ -252,22 +252,16 @@ module iexecution_unit (input clk,
                              end
                              else
                                 vld[next_free_lane] <= 0;
-                             //regiser1 req
-                             if(reg_req[0].vld && reg_req_grant[1] && reg_req_grant[0] && !reg_req[0].vld) begin
+                             //regiser req generation : both register request will always be placed together
+                             if((!reg_req[0].vld && !reg_req[0].vld)
+                                || (reg_req[0].vld && (reg1_rcvd || reg_req_grant[0]) && reg_req[1].vld && (reg2_rcvd || reg_req_grant[1])))begin
                                 reg_req[0].vld <= 1;
                                 reg_req[0].access_type <= READ_REQ;
                                 reg_req[0].access_length <= EXE_VECTOR_REG.LENGTH;
                                 reg_req[0].stride_type <= NON_STRIDE;
                                 reg_req[0].vec_reg_ptr <= v_register_t'(reg1);
                                 reg_req[0].addr <= vector_length;
-                                vec_addr[next_free_lane] <= vector_length;
                                 reg_req[0].data <= 0;
-                             end
-                             else begin
-                                reg_req[0] <= 0;
-                             end
-                             //regiser2 req
-                             if(reg_req[1].vld && reg_req_grant[1] && reg_req_grant[0] && !reg_req[1].vld) begin
                                 reg_req[1].vld <= 1;
                                 reg_req[1].access_type <= READ_REQ;
                                 reg_req[1].access_length <= EXE_VECTOR_REG.LENGTH;
@@ -275,13 +269,15 @@ module iexecution_unit (input clk,
                                 reg_req[1].vec_reg_ptr <= v_register_t'(reg2);
                                 reg_req[1].addr <= vector_length;
                                 reg_req[1].data <= 0;
-                             end
-                             else begin
-                                reg_req[1] <= 0;
+                                vector_length <= vector_length + 1;
+                                vec_addr[next_free_lane] <= vector_length;
                              end
                           end
-                          else if (vld[0] && (EXE_VECTOR_REG.LENGTH == vector_length)) begin
-                             exe_unit_active <= 0; 
+                          else if (vld[0] && (EXE_VECTOR_REG.LENGTH == vector_length) && 
+                                   (reg_req[0].vld && (reg1_rcvd || reg_req_grant[0]) && reg_req[1].vld && (reg2_rcvd || reg_req_grant[1]))) begin
+                             exe_unit_active <= 0;
+                             reg_req[0] <= 0;
+                             reg_req[1] <= 0;
                           end
                        end
              ADDVSD  : begin
