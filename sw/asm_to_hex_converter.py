@@ -91,7 +91,7 @@ def reg_to_hex(reg_input):
                 "R30" : 30,
                 "R31" : 31
                 }
-    reg_hex = hex(reg_dict.get(reg_input,"0"))
+    reg_hex = hex(reg_dict.get(reg_input,0))
     return reg_hex;
 
 asm = open("assembly.txt",'r')
