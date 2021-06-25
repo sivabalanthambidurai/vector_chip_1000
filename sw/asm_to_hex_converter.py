@@ -46,7 +46,7 @@ def opcode_to_hex(opcode_input):
                       "PIPE_HALT"     : 36,
                       "MOV_IMM"       : 37,
                       "MOV_IMM_DATA"  : 38}
-    hex_output = hex(opcode_dict.get(opcode_input,"NO_OP"))
+    hex_output = hex(opcode_dict.get(opcode_input,0))
     return hex_output;
 
 def reg_to_hex(reg_input):
