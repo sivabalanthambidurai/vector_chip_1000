@@ -306,7 +306,7 @@ module iexecution_unit (input clk,
                              exe_unit_active <= 0;
                           load_store_req.vld <= 1;
                           load_store_req.access_type <= READ_REQ;
-                          load_store_req.access_length <= 0;
+                          load_store_req.access_length <= EXE_VECTOR_REG.LENGTH;
                           load_store_req.stride_type <= NON_STRIDE;
                           load_store_req.vec_reg_ptr <= v_register_t'(reg1);
                           load_store_req.addr <= read_data;

@@ -102,7 +102,7 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
   end
 
 assign buffer_full = (((request_count != rsp_rcvd_count) && (cntrl_req_ff.access_type == WRITE_REQ)) ||
-                     ((cntrl_req_ff.access_type == READ_REQ) && read_complete)) ? 1 : 0;
+                     ((cntrl_req_ff.access_type == READ_REQ) && !read_complete)) ? 1 : 0;
 
   //register request and response logic
   always_ff @(posedge clk or negedge reset) begin
