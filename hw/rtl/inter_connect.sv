@@ -73,6 +73,13 @@ module inter_connect (input clk,
          4'h3: core3_rsp <= mem_rsp;
          endcase
       end
+      else
+      begin
+         core0_rsp <= 'h0;
+         core1_rsp <= 'h0;
+         core2_rsp <= 'h0;
+         core3_rsp <= 'h0;
+      end
    end  
 
 endmodule

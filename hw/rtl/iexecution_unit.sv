@@ -219,6 +219,7 @@ module iexecution_unit (input clk,
     always_ff @(posedge clk or negedge reset) begin
        if(!reset) begin
           EXE_VECTOR_REG <= 0;
+          exe_unit_active <= 0;
        end
        else begin
           case (opcode)

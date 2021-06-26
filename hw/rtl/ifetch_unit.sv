@@ -39,7 +39,7 @@ module ifetch_unit (input clk,
       else if (!pipe_active && tm_req.vld && (tm_req.access_type == THREAD_ACTIVATE))
          pipe_active <= 1;
       //immediatly stop the fetch if we see a PIPE_HALT instruction
-      else if (pipe_active && ((opcode0 == PIPE_HALT) || (opcode1 == PIPE_HALT)))
+      else if (pipe_active && ((opcode0[31:24] == PIPE_HALT) || (opcode1[31:24] == PIPE_HALT)))
          pipe_active <= 0;
    end
 
@@ -78,10 +78,10 @@ module ifetch_unit (input clk,
          icache_req.data <= 0;
          current_pc <= current_pc + 1;
       end
-      else if (!pipe_active)
+      else if (!pipe_active) begin
          current_pc <= 0;
-      else 
          icache_req <= 0;
+      end
    end
 
    //a single cycle indicating a valid opcode to the execution unit 

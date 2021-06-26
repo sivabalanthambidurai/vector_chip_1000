@@ -25,7 +25,7 @@ module cache # (parameter CORE_ID = 0)
     logic [SET_BIT_WIDTH-1:0] set, set_mask;
     logic [TAG_BIT_WIDTH-1:0] tag, tag_mask;
     logic [MAX_ASSOCIATIVITY-1:0] block_en, block_vld;
-    logic [ADDR_FIELD_WIDTH-1:0] block_addr;
+    logic [ADDR_FIELD_WIDTH-1:0] block_addr [MAX_ASSOCIATIVITY];
     logic [DATA_FIELD_WIDTH-1:0] block_data;
     logic [DATA_FIELD_WIDTH-1:0] block_data_arr [MAX_ASSOCIATIVITY];
     associativity_t cache_associativity;
@@ -48,7 +48,7 @@ module cache # (parameter CORE_ID = 0)
           tag <= 0;
           set <= 0;
        end
-       else if(req.vld) begin
+       else if(req.vld && !busy) begin
           req_ff <= req;
           tag <= tag_mask & req.addr[SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)-1:$clog2(CACHE_BLOCK_SIZE)];
           set <= set_mask & req.addr[TAG_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)-1:$clog2(CACHE_BLOCK_SIZE)];
@@ -73,60 +73,63 @@ module cache # (parameter CORE_ID = 0)
        end
        else begin
           case(cache_associativity)
-             ONE_WAY_ASSOCIATIVITY: begin tag_mask <= 'h1f; set_mask <= 'h0; end
-             TWO_WAY_ASSOCIATIVITY: begin tag_mask <= 'h1e; set_mask <= 'h1; end
-             FOUR_WAY_ASSOCIATIVITY: begin tag_mask <= 'h1c; set_mask <= 'h3; end
-             EIGHT_WAY_ASSOCIATIVITY: begin tag_mask <= 'h18; set_mask <= 'h7; end
-             SIXTEEN_WAY_ASSOCIATIVITY: begin tag_mask <= 'h10; set_mask <= 'hf; end
-             THIRTYTWO_WAY_ASSOCIATIVITY: begin tag_mask <= 'h0; set_mask <= 'h1f; end
+             ONE_WAY_ASSOCIATIVITY: begin set_mask <= 'h1f; tag_mask <= 'h0; end
+             TWO_WAY_ASSOCIATIVITY: begin set_mask <= 'h1e; tag_mask <= 'h1; end
+             FOUR_WAY_ASSOCIATIVITY: begin set_mask <= 'h1c; tag_mask <= 'h3; end
+             EIGHT_WAY_ASSOCIATIVITY: begin set_mask <= 'h18; tag_mask <= 'h7; end
+             SIXTEEN_WAY_ASSOCIATIVITY: begin set_mask <= 'h10; tag_mask <= 'hf; end
+             THIRTYTWO_WAY_ASSOCIATIVITY: begin set_mask <= 'h0; tag_mask <= 'h1f; end
           endcase
        end
     end
 
     always_comb begin
-       case(cache_associativity)
-          ONE_WAY_ASSOCIATIVITY: begin 
-                                    for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
-                                    begin
-                                       if(set == i)
-                                          block_en[i] = 1;
+       block_en = 0;
+       if((req.vld && !busy) || req_ff.vld) begin
+          case(cache_associativity)
+             ONE_WAY_ASSOCIATIVITY: begin 
+                                       for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
+                                       begin
+                                          if(set == i)
+                                             block_en[i] = 1;
+                                       end
                                     end
-                                 end
-          TWO_WAY_ASSOCIATIVITY: begin 
-                                    for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
-                                    begin
-                                       if(set == (i/2))
-                                          block_en[i] = 1;
+             TWO_WAY_ASSOCIATIVITY: begin 
+                                       for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
+                                       begin
+                                          if(set == (i/2))
+                                             block_en[i] = 1;
+                                       end
                                     end
-                                 end
-          FOUR_WAY_ASSOCIATIVITY: begin 
-                                     for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
-                                     begin
-                                        if(set == (i/4))
-                                           block_en[i] = 1;
-                                     end
-                                  end
-          EIGHT_WAY_ASSOCIATIVITY: begin 
-                                      for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
-                                      begin
-                                         if(set == (i/8))
-                                            block_en[i] = 1;
-                                      end
-                                   end
-          SIXTEEN_WAY_ASSOCIATIVITY: begin 
+             FOUR_WAY_ASSOCIATIVITY: begin 
                                         for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
                                         begin
-                                           if(set == (i/16))
-                                              block_en[i] = 1;     
+                                           if(set == (i/4))
+                                              block_en[i] = 1;
                                         end
                                      end
-          THIRTYTWO_WAY_ASSOCIATIVITY: begin 
-                                          for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
-                                          begin
-                                             block_en[i] = 1;
+             EIGHT_WAY_ASSOCIATIVITY: begin 
+                                         for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
+                                         begin
+                                            if(set == (i/8))
+                                               block_en[i] = 1;
+                                         end
+                                      end
+             SIXTEEN_WAY_ASSOCIATIVITY: begin 
+                                           for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
+                                           begin
+                                              if(set == (i/16))
+                                                 block_en[i] = 1;     
+                                           end
+                                        end
+             THIRTYTWO_WAY_ASSOCIATIVITY: begin 
+                                             for(bit [SET_BIT_WIDTH-1:0] i=0; i<MAX_ASSOCIATIVITY; i++)
+                                             begin
+                                                block_en[i] = 1;
+                                             end
                                           end
-                                       end
-       endcase      
+          endcase
+       end    
     end
 
     //cache hit/miss logic
@@ -136,7 +139,7 @@ module cache # (parameter CORE_ID = 0)
           cache_miss_arr1[i] = 0;
           block_data_arr[i] = 0;
           if(block_en[i]) begin
-             if(block_vld[i] && req_ff.vld && (req_ff.addr[ADDR_FIELD_WIDTH-1:SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)] == block_addr[ADDR_FIELD_WIDTH-1:SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)])) begin
+             if(block_vld[i] && req_ff.vld && (tag == (tag_mask & block_addr[i][ADDR_FIELD_WIDTH-1:TAG_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)]))) begin
                 cache_hit_arr1[i] = 1;
                 cache_miss_arr1[i] = 0;
                 block_data_arr[i] = cache_memory[i][req_ff.addr[$clog2(CACHE_BLOCK_SIZE)-1:0]];
@@ -148,7 +151,7 @@ module cache # (parameter CORE_ID = 0)
     //streaming the hit/miss/data from cache
     always_comb begin
        cache_hit_arr2 = {>> 1{cache_hit_arr1}};
-       cache_hit = |cache_miss_arr2;
+       cache_hit = |cache_hit_arr2;
        cache_miss = !cache_hit;
     end
 
@@ -164,7 +167,7 @@ module cache # (parameter CORE_ID = 0)
              cache_hit_count[i] <= 0;
           end
           else if(block_en[i]) begin
-             if(block_vld[i] && req_ff.vld && (req_ff.addr[ADDR_FIELD_WIDTH-1:SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)] == block_addr[ADDR_FIELD_WIDTH-1:SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)]))
+             if(block_vld[i] && req_ff.vld && (tag == (tag_mask & block_addr[i][ADDR_FIELD_WIDTH-1:TAG_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)])))
              begin
                 cache_hit_count[i] <= cache_hit_count[i] + 1;
              end
@@ -186,7 +189,7 @@ module cache # (parameter CORE_ID = 0)
           rsp.byte_en <= 0;
           rsp.data <= block_data;
        end
-       else if (cache_miss && mem_rsp.vld && (mem_rsp.access_id == 0)) begin//send only the first response.
+       else if (cache_miss && mem_rsp.vld && (mem_rsp.access_id == 64)) begin//send only the first response.
           rsp.vld <= 1;
           rsp.access_type <= READ_RSP;
           rsp.access_id <= 0;
@@ -206,7 +209,7 @@ module cache # (parameter CORE_ID = 0)
           mem_req <= 0;
           req_sent_count <= 0;
        end
-       else if((!mem_req.vld || (mem_req.vld && req_grant)) && cache_miss && |block_en && (req_sent_count < CACHE_BLOCK_SIZE)) begin
+       else if((!mem_req.vld || (mem_req.vld && req_grant)) && req_ff.vld && cache_miss && |block_en && (req_sent_count < CACHE_BLOCK_SIZE)) begin
           mem_req.vld <= 1;
           mem_req.access_type <= READ_REQ;
           mem_req.access_length <= CACHE_BLOCK_SIZE;
@@ -217,9 +220,11 @@ module cache # (parameter CORE_ID = 0)
           mem_req.data <= 0;
           req_sent_count <= req_sent_count + 1;
        end
-       else if (req_sent_count == CACHE_BLOCK_SIZE) begin
-          mem_req.vld <= 0;
+       else if (req_sent_count == rsp_rcvd_count) begin
           req_sent_count <= 0;
+       end
+       else if (req_sent_count == CACHE_BLOCK_SIZE) begin
+          mem_req <= 0;
        end
     end
 
@@ -237,6 +242,7 @@ module cache # (parameter CORE_ID = 0)
     always_ff @(posedge clk or negedge reset) begin
        if(!reset) begin
           rsp_rcvd_count <= 0;
+          block_vld <= 0;
        end
        else if (cache_miss && mem_rsp.vld) begin
           if (rsp_rcvd_count<CACHE_BLOCK_SIZE)
@@ -244,12 +250,15 @@ module cache # (parameter CORE_ID = 0)
           else if (rsp_rcvd_count==CACHE_BLOCK_SIZE)
              rsp_rcvd_count <= 0;
           for(int i=0; i<MAX_ASSOCIATIVITY; i++) begin
-             if((!block_vld[i] || (block_vld[i] && (i==lru_block))) && block_en[i] && req_ff.vld && (req_ff.addr[ADDR_FIELD_WIDTH-1:SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)] == block_addr[ADDR_FIELD_WIDTH-1:SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)])) begin
-                block_vld <= 1;
-                block_addr <= req_ff.addr & 64'h7;
+             if((!block_vld[i] || (block_vld[i] && (i==lru_block))) && block_en[i] && req_ff.vld) begin
+                block_addr[i] <= req_ff.addr & 64'h7;
                 cache_memory[i][mem_rsp.addr[$clog2(CACHE_BLOCK_SIZE)-1:0]] <= mem_rsp.data;
              end
           end
+       end
+       else if (rsp_rcvd_count==CACHE_BLOCK_SIZE) begin
+          block_vld <= block_en;
+          rsp_rcvd_count <= 0;
        end
     end   
 

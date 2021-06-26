@@ -47,18 +47,21 @@ module memory_controller (input clk,
    `flip_flop(clk, reset, core_req.access_type, core_req_f1.access_type)
    `flip_flop(clk, reset, core_req.access_id, core_req_f1.access_id)
    `flip_flop(clk, reset, core_req.core_id, core_req_f1.core_id)
+   `flip_flop(clk, reset, core_req.addr, core_req_f1.addr)
    `flip_flop(clk, reset, core_req.data, core_req_f1.data)
 
    `flip_flop(clk, reset, core_req_f1.vld, core_req_f2.vld)
    `flip_flop(clk, reset, core_req_f1.access_type, core_req_f2.access_type)
    `flip_flop(clk, reset, core_req_f1.access_id, core_req_f2.access_id)
    `flip_flop(clk, reset, core_req_f1.core_id, core_req_f2.core_id)
+   `flip_flop(clk, reset, core_req_f1.addr, core_req_f2.addr)
    `flip_flop(clk, reset, core_req_f1.data, core_req_f2.data)
 
    assign core_rsp.vld = core_req_f2.vld;
    assign core_rsp.access_type = (core_req_f2.access_type == WRITE_REQ) ? WRITE_RSP : READ_RSP;
    assign core_rsp.access_id = core_req_f2.access_id;
    assign core_rsp.core_id = core_req_f2.core_id;
+   assign core_rsp.addr = core_req_f2.addr;
    assign core_rsp.data = (core_req_f2.access_type == READ_REQ) ? q : 0;
 
 endmodule

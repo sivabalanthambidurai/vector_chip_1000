@@ -173,12 +173,15 @@ module core # (parameter CORE_ID = 0)
          load_store_unit_mem_rsp <= 0;
       end
       else begin
-         if(mem_rsp.vld)
-         begin
+         if(mem_rsp.vld) begin
             if(mem_rsp.access_id[6])//access_id(6) = 1 is a icahe response 
                icache_mem_rsp <= mem_rsp;
             else
                load_store_unit_mem_rsp <= mem_rsp;
+         end
+         else begin
+            icache_mem_rsp <= 0;
+            load_store_unit_mem_rsp <= 0;            
          end
       end
    end 
