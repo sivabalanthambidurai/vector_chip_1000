@@ -47,6 +47,8 @@ def opcode_to_hex(opcode_input):
                       "MOV_IMM"       : 37,
                       "MOV_IMM_DATA"  : 38}
     hex_output = hex(opcode_dict.get(opcode_input,0))
+    if(opcode_dict.get(opcode_input,0) < 16):
+        hex_output = hex_output[:2] + "0" + hex_output[2:]
     return hex_output;
 
 def reg_to_hex(reg_input):
@@ -92,7 +94,9 @@ def reg_to_hex(reg_input):
                 "R31" : 31
                 }
     reg_hex = hex(reg_dict.get(reg_input,0))
-    return reg_hex;
+    if(reg_dict.get(reg_input,0) < 16):
+        reg_hex = reg_hex[:2] + "0" + reg_hex[2:]
+    return reg_hex[2:];
 
 asm = open("assembly.txt",'r')
 array_of_codes = asm.readlines()
@@ -106,8 +110,7 @@ for i in range(0,len(array_of_codes)):
     reg1 = reg_to_hex(reg_array[0])
     reg2 = reg_to_hex(reg_array[1])
     reg3 = reg_to_hex(reg_array[2])
-    code_merged = str(opcode_hex[2:] + reg1[2:] + reg2[2:] + reg3[2:])
-    machine_code += "0x"
+    code_merged = opcode_hex + reg1 + reg2 + reg3
     machine_code += code_merged
     machine_code += "\n"
 
