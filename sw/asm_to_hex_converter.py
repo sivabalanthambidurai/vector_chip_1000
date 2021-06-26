@@ -105,12 +105,15 @@ for i in range(0,len(array_of_codes)):
     code = array_of_codes[i].rstrip("\n")
     code_array = code.split(" ")
     opcode = code_array[0]
-    reg_array = code_array[1].split(",")
     opcode_hex = opcode_to_hex(opcode);
-    reg1 = reg_to_hex(reg_array[0])
-    reg2 = reg_to_hex(reg_array[1])
-    reg3 = reg_to_hex(reg_array[2])
-    code_merged = opcode_hex + reg1 + reg2 + reg3
+    if(code != "PIPE_HALT"):
+       reg_array = code_array[1].split(",")
+       reg1 = reg_to_hex(reg_array[0])
+       reg2 = reg_to_hex(reg_array[1])
+       reg3 = reg_to_hex(reg_array[2])
+       code_merged = opcode_hex + reg1 + reg2 + reg3
+    else:
+       code_merged = opcode_hex + "000000"
     machine_code += code_merged
     machine_code += "\n"
 
