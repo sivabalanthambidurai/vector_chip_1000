@@ -42,14 +42,14 @@ module iexecution_unit (input clk,
     logic buffer0_full, buffer1_full, buffer0_empty, buffer1_empty,
           buffer0_rsp, buffer1_rsp;
     //exe_unit_active : Indicates that execution unit is Active.
-    logic exe_unit_active;
+    logic exe_unit_active, exe_unit_active_ff;
     logic all_lanes_busy;
     logic [NUM_OF_LANES-1:0] busy_vector;
     logic [$clog2(NUM_OF_LANES)-1:0] next_free_lane;//indicates the next free lane.
     logic [$clog2(NUM_OF_LANES)-1:0] prev_free_lane;//indicates the previous free lane. To clear the valid bit.
 
     opcode_t buffer0_opcode, buffer1_opcode;
-    vopcode_t opcode, opcode_comb, opcode_pre;
+    vopcode_t opcode;
     logic [PIPELINE_OPCODE_WIDTH-1:0] movimm;
     logic [VECTOR_REG_WIDTH-1:0] reg1, reg2, reg3;
     //indicates the register data has been received.
@@ -135,7 +135,7 @@ module iexecution_unit (input clk,
                     .req_data(opcode0),
                     .full(buffer0_full),
                     //buffer output
-                    .rsp(buffer0_rsp && !exe_unit_active),
+                    .rsp(buffer0_rsp && !exe_unit_active_ff),
                     .empty(buffer0_empty),
                     .rsp_data(buffer0_opcode)
                    );
@@ -148,7 +148,7 @@ module iexecution_unit (input clk,
                     .req_data(opcode1),
                     .full(buffer1_full),
                     //buffer output
-                    .rsp(buffer1_rsp && !exe_unit_active),
+                    .rsp(buffer1_rsp && !exe_unit_active_ff),
                     .empty(buffer1_empty),
                     .rsp_data(buffer1_opcode)
                    );
@@ -212,11 +212,8 @@ module iexecution_unit (input clk,
        end
     end
 
-    //to keep the curren opcode when execution unit is active with blocking instructions.
-    always_comb begin
-       opcode_comb = exe_unit_active ? opcode_pre : opcode;
-    end
-    
+    `flip_flop(clk,reset,exe_unit_active,exe_unit_active_ff)
+   
     //execution unit
     always_ff @(posedge clk or negedge reset) begin
        if(!reset) begin
@@ -224,8 +221,7 @@ module iexecution_unit (input clk,
           exe_unit_active <= 0;
        end
        else begin
-          opcode_pre <= opcode_comb;
-          case (opcode_comb)
+          case (opcode)
              NO_OP   : begin
                        end
              ADDVVD  : begin
@@ -303,7 +299,7 @@ module iexecution_unit (input clk,
              DIVSVD  : begin
                        end
              LV      : begin
-                          if(!exe_unit_active) begin
+                          if(!load_store_unit_busy) begin
                              exe_unit_active <= 1;
                              load_store_req.vld <= 1;
                              load_store_req.access_type <= READ_REQ;
@@ -313,7 +309,10 @@ module iexecution_unit (input clk,
                              load_store_req.addr <= read_data;
                              load_store_req.data <= 0;
                           end
-                          else if(!load_store_unit_busy) begin
+                          else if (!load_store_req.vld && load_store_unit_busy) begin
+                             exe_unit_active <= 1;
+                          end
+                          else if(load_store_req.vld && exe_unit_active) begin
                              exe_unit_active <= 0;
                              load_store_req <= 0;
                           end
@@ -323,7 +322,7 @@ module iexecution_unit (input clk,
              LVWS    : begin
                        end
              SV      : begin
-                          if(!exe_unit_active) begin
+                          if(!load_store_unit_busy) begin
                              exe_unit_active <= 1;
                              load_store_req.vld <= 1;
                              load_store_req.access_type <= WRITE_REQ;
@@ -333,7 +332,10 @@ module iexecution_unit (input clk,
                              load_store_req.addr <= read_data;
                              load_store_req.data <= 0;
                           end
-                          else if(!load_store_unit_busy) begin
+                          else if (!load_store_req.vld && load_store_unit_busy) begin
+                             exe_unit_active <= 1;
+                          end
+                          else if(load_store_req.vld && exe_unit_active) begin
                              exe_unit_active <= 0;
                              load_store_req <= 0;
                           end                         
