@@ -40,7 +40,7 @@ module iexecution_unit (input clk,
                        );
 
     logic buffer0_full, buffer1_full, buffer0_empty, buffer1_empty,
-          buffer0_rsp, buffer1_rsp, buffer0_rsp_ff, buffer1_rsp_ff;
+          buffer0_rsp, buffer1_rsp;
     //exe_unit_active : Indicates that execution unit is Active.
     logic exe_unit_active;
     logic all_lanes_busy;
@@ -49,7 +49,7 @@ module iexecution_unit (input clk,
     logic [$clog2(NUM_OF_LANES)-1:0] prev_free_lane;//indicates the previous free lane. To clear the valid bit.
 
     opcode_t buffer0_opcode, buffer1_opcode;
-    vopcode_t opcode;
+    vopcode_t opcode, opcode_comb, opcode_pre;
     logic [PIPELINE_OPCODE_WIDTH-1:0] movimm;
     logic [VECTOR_REG_WIDTH-1:0] reg1, reg2, reg3;
     //indicates the register data has been received.
@@ -135,7 +135,7 @@ module iexecution_unit (input clk,
                     .req_data(opcode0),
                     .full(buffer0_full),
                     //buffer output
-                    .rsp(buffer0_rsp_ff && !exe_unit_active),
+                    .rsp(buffer0_rsp && !exe_unit_active),
                     .empty(buffer0_empty),
                     .rsp_data(buffer0_opcode)
                    );
@@ -148,7 +148,7 @@ module iexecution_unit (input clk,
                     .req_data(opcode1),
                     .full(buffer1_full),
                     //buffer output
-                    .rsp(buffer1_rsp_ff && !exe_unit_active),
+                    .rsp(buffer1_rsp && !exe_unit_active),
                     .empty(buffer1_empty),
                     .rsp_data(buffer1_opcode)
                    );
@@ -158,12 +158,9 @@ module iexecution_unit (input clk,
     arbiter_rr # (.VECTOR_IN(2))
                exe_arb (.clk(clk),
                         .reset(reset),
-                        .request_vector({!buffer1_empty && !exe_unit_active, !buffer0_empty && !exe_unit_active}),
+                        .request_vector({!buffer1_rsp && !buffer1_empty && !exe_unit_active, !buffer0_rsp && !buffer0_empty && !exe_unit_active}),
                         .grant({buffer1_rsp, buffer0_rsp})
                        );
-
-   `flip_flop(clk,reset,buffer0_rsp && !exe_unit_active,buffer0_rsp_ff)
-   `flip_flop(clk,reset,buffer1_rsp && !exe_unit_active,buffer1_rsp_ff)
    
     //opcode fetching logic.
     always_ff@(posedge clk or negedge reset) begin
@@ -214,6 +211,11 @@ module iexecution_unit (input clk,
           end
        end
     end
+
+    //to keep the curren opcode when execution unit is active with blocking instructions.
+    always_comb begin
+       opcode_comb = exe_unit_active ? opcode_pre : opcode;
+    end
     
     //execution unit
     always_ff @(posedge clk or negedge reset) begin
@@ -222,7 +224,8 @@ module iexecution_unit (input clk,
           exe_unit_active <= 0;
        end
        else begin
-          case (opcode)
+          opcode_pre <= opcode_comb;
+          case (opcode_comb)
              NO_OP   : begin
                        end
              ADDVVD  : begin
@@ -299,37 +302,41 @@ module iexecution_unit (input clk,
                        end
              DIVSVD  : begin
                        end
-             LV      : begin//LV is a blocking instruction
-                          if(!exe_unit_active)
+             LV      : begin
+                          if(!exe_unit_active) begin
                              exe_unit_active <= 1;
+                             load_store_req.vld <= 1;
+                             load_store_req.access_type <= READ_REQ;
+                             load_store_req.access_length <= EXE_VECTOR_REG.LENGTH;
+                             load_store_req.stride_type <= NON_STRIDE;
+                             load_store_req.vec_reg_ptr <= v_register_t'(reg1);
+                             load_store_req.addr <= read_data;
+                             load_store_req.data <= 0;
+                          end
                           else if(!load_store_unit_busy) begin
                              exe_unit_active <= 0;
                              load_store_req <= 0;
                           end
-                          load_store_req.vld <= 1;
-                          load_store_req.access_type <= READ_REQ;
-                          load_store_req.access_length <= EXE_VECTOR_REG.LENGTH;
-                          load_store_req.stride_type <= NON_STRIDE;
-                          load_store_req.vec_reg_ptr <= v_register_t'(reg1);
-                          load_store_req.addr <= read_data;
-                          load_store_req.data <= 0;
                        end
              LVI     : begin
                        end
              LVWS    : begin
                        end
-             SV      : begin//SV is non-blocking
-                          if(load_store_unit_busy)
+             SV      : begin
+                          if(!exe_unit_active) begin
                              exe_unit_active <= 1;
-                          else
+                             load_store_req.vld <= 1;
+                             load_store_req.access_type <= WRITE_REQ;
+                             load_store_req.access_length <= EXE_VECTOR_REG.LENGTH;
+                             load_store_req.stride_type <= NON_STRIDE;
+                             load_store_req.vec_reg_ptr <= v_register_t'(reg1);
+                             load_store_req.addr <= read_data;
+                             load_store_req.data <= 0;
+                          end
+                          else if(!load_store_unit_busy) begin
                              exe_unit_active <= 0;
-                          load_store_req.vld <= 1;
-                          load_store_req.access_type <= WRITE_REQ;
-                          load_store_req.access_length <= EXE_VECTOR_REG.LENGTH;
-                          load_store_req.stride_type <= NON_STRIDE;
-                          load_store_req.vec_reg_ptr <= v_register_t'(reg1);
-                          load_store_req.addr <= read_data;
-                          load_store_req.data <= 0;
+                             load_store_req <= 0;
+                          end                         
                        end
              SVI     : begin
                        end

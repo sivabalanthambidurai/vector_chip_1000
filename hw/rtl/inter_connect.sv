@@ -10,15 +10,19 @@ module inter_connect (input clk,
                       //core0 interface
                       input request_t core0_req,
                       output request_t core0_rsp,
+                      output reg core0_grant,
                       //core1 interface
                       input request_t core1_req,
                       output request_t core1_rsp,
+                      output reg core1_grant,
                       //core2 interface
                       input request_t core2_req,
                       output request_t core2_rsp,
+                      output reg core2_grant,
                       //core3 interface
                       input request_t core3_req,
                       output request_t core3_rsp,
+                      output reg core3_grant,
 
                       //memory interface
                       output request_t mem_req,
@@ -41,20 +45,30 @@ module inter_connect (input clk,
                                        .request_vector({4'h0,core3_req.vld, core2_req.vld, core1_req.vld, core0_req.vld}),
                                        .weight(weight),
                                        .grant(memory_request_grant)
-                                     );
+                                      );
 
+   //grant to the respective cores
+   assign core0_grant = memory_request_grant[0];
+   assign core1_grant = memory_request_grant[1];
+   assign core2_grant = memory_request_grant[2];
+   assign core3_grant = memory_request_grant[3];
 
    //cores to memory request interface
-   always_comb begin
-      unique case(memory_request_grant)
-      0: mem_req = 'h0;
-      1: mem_req = core0_req;
-      2: mem_req = core1_req;
-      4: mem_req = core2_req;
-      8: mem_req = core3_req;
-      default : mem_req = 'h0;
-      endcase
-   end
+   always_ff @(posedge clk or negedge reset) begin
+      if(!reset) begin
+         mem_req <= 0;
+      end
+      else begin
+         unique case(memory_request_grant)
+            0: mem_req <= 'h0;
+            1: mem_req <= core0_req;
+            2: mem_req <= core1_req;
+            4: mem_req <= core2_req;
+            8: mem_req <= core3_req;
+            default : mem_req = 'h0;
+         endcase
+      end
+   end 
 
    //memory to core response interface
    always_ff@(posedge clk or negedge reset) begin

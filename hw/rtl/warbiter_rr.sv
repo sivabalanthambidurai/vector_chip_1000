@@ -48,7 +48,7 @@ module warbiter_rr # (parameter VECTOR_IN = 8)
                    );
 
    logic [VECTOR_IN-1:0] request_vector_comb, masked_request_vector,
-                         unmasked_grant, masked_grant, next_mask_vector;
+                         unmasked_grant, unmasked_grant_ff, masked_grant, next_mask_vector;
    logic masked;
 
    weight_logic # (.VECTOR_IN(VECTOR_IN))
@@ -87,12 +87,14 @@ module warbiter_rr # (parameter VECTOR_IN = 8)
     always_comb begin
        masked = (masked_grant == 4'h0) ? 0 : 1;
     end
-
+ 
+    `flip_flop(clk, reset, unmasked_grant, unmasked_grant_ff)
+   
     always_comb begin
        if(masked)
           grant = masked_grant;
        else
-          grant = unmasked_grant;
+          grant = unmasked_grant_ff;
     end
 
 endmodule

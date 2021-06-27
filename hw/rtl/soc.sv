@@ -22,7 +22,10 @@ module soc (input clk,
    logic [DATA_FIELD_WIDTH-1:0] data;
    logic [DATA_FIELD_WIDTH-1:0] q;
    //core0 interface
+   logic core0_grant;
    request_t core0_req, core0_rsp;
+
+   //core 1-3 interface
 
    inter_connect soc_inter_connect (.clk(clk),
                                     .reset(reset),
@@ -30,15 +33,19 @@ module soc (input clk,
                                     //core0 interface
                                     .core0_req(core0_req),
                                     .core0_rsp(core0_rsp),
+                                    .core0_grant(core0_grant),
                                     //core1 interface
                                     .core1_req(),
                                     .core1_rsp(),
+                                    .core1_grant(),
                                     //core2 interface
                                     .core2_req(),
                                     .core2_rsp(),
+                                    .core2_grant(),
                                     //core3 interface
                                     .core3_req(),
                                     .core3_rsp(),
+                                    .core3_grant(),
 
                                     //memory interface
                                     .mem_req(mem_req),
@@ -53,7 +60,8 @@ module soc (input clk,
                  
               //memory interface
               .mem_rsp(core0_rsp),
-              .mem_req(core0_req)
+              .mem_req(core0_req),
+              .mem_req_grant(core0_grant)
              );
     
 //core1-3

@@ -18,7 +18,8 @@ module core # (parameter CORE_ID = 0)
                     
              //memory interface
              input request_t mem_rsp,
-             output request_t mem_req
+             output request_t mem_req,
+             input mem_req_grant
             );
 
   //8 read and 8 write ports for 8 vector register. (1 read + 1 write port per vector register)
@@ -99,7 +100,7 @@ module core # (parameter CORE_ID = 0)
 
                                         //memory request interface
                                         .mem_rsp(load_store_unit_mem_rsp),
-                                        .req_grant(grant[1]),
+                                        .req_grant(grant[1] && (!mem_req.vld || (mem_req_grant && mem_req.vld))),
                                         .mem_req(load_store_unit_mem_req)
                                         );
 
@@ -142,7 +143,7 @@ module core # (parameter CORE_ID = 0)
                      .rsp(icache_rsp),
                      //memory interface
                      .mem_rsp(icache_mem_rsp),
-                     .req_grant(grant[0]),
+                     .req_grant(grant[0] && (!mem_req.vld || (mem_req_grant && mem_req.vld))),
                      .mem_req(icache_mem_req)
                     );
 
@@ -157,7 +158,7 @@ module core # (parameter CORE_ID = 0)
       if(!reset) begin
          mem_req <= 0;
       end
-      else begin
+      else if((mem_req_grant && mem_req.vld) || !mem_req.vld)begin
          unique case(grant)
             0: mem_req <= 0;
             1: mem_req <= icache_mem_req;
