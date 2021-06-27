@@ -32,7 +32,7 @@ module lane (input clk,
           data_out <= 0;
           functional_unit_busy <= 0;
        end
-       else begin
+       else if (vld) begin
           case (functional_opcode)
              SADD : begin
                        result_vld  <= 1;

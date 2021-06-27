@@ -59,7 +59,7 @@ module warbiter_rr # (parameter VECTOR_IN = 8)
                                      .grant(next_mask_vector)
                                     );
 
-  //filter thew request that has zero weight.
+  //filter request that has zero weight.
    always_comb begin
       request_vector_comb = 0;
       for(int i=0; i<VECTOR_IN; i++) begin

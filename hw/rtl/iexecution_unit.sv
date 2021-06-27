@@ -302,8 +302,10 @@ module iexecution_unit (input clk,
              LV      : begin//LV is a blocking instruction
                           if(!exe_unit_active)
                              exe_unit_active <= 1;
-                          else if(!load_store_unit_busy)
+                          else if(!load_store_unit_busy) begin
                              exe_unit_active <= 0;
+                             load_store_req <= 0;
+                          end
                           load_store_req.vld <= 1;
                           load_store_req.access_type <= READ_REQ;
                           load_store_req.access_length <= EXE_VECTOR_REG.LENGTH;
@@ -323,7 +325,7 @@ module iexecution_unit (input clk,
                              exe_unit_active <= 0;
                           load_store_req.vld <= 1;
                           load_store_req.access_type <= WRITE_REQ;
-                          load_store_req.access_length <= 0;
+                          load_store_req.access_length <= EXE_VECTOR_REG.LENGTH;
                           load_store_req.stride_type <= NON_STRIDE;
                           load_store_req.vec_reg_ptr <= v_register_t'(reg1);
                           load_store_req.addr <= read_data;

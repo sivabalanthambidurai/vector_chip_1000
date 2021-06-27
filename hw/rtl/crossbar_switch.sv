@@ -21,43 +21,66 @@ module crossbar_switch (input clk,
                        );
 
     logic [NUM_OF_PORT-1:0] request [NUM_OF_VECTOR_REG], grant [NUM_OF_VECTOR_REG];
-    logic [NUM_OF_PORT-1:0] weight [NUM_OF_PORT-1:0];
+    logic [NUM_OF_PORT-1:0] weight [NUM_OF_VECTOR_REG][NUM_OF_PORT-1:0];
+
+    logic [NUM_OF_PORT-1:0] grant_rev [NUM_OF_VECTOR_REG];
+
+    //grant logic
+    logic reg_req_grant_comb [NUM_OF_PORT-1:0];
+    logic rsp_vld_comb [NUM_OF_PORT-1:0];
 
     always_comb begin
         for(int i = 0; i<NUM_OF_PORT; i++) begin
-           request[i] = 0;
            for(int j = 0; j<NUM_OF_VECTOR_REG; j++) begin
-              request[i][j] = vec_reg_req_port[i].vld && (vec_reg_req_port[i].vec_reg_ptr == j);
+              if(vec_reg_req_port[i].vld && (vec_reg_req_port[i].vec_reg_ptr == j)) begin
+                 request[j][i] = 1;
+                 weight[j][i] = vec_reg_req_port[i].access_length;
+              end
+              else begin
+                 request[j][i] = 0 ;
+              end
            end
         end
     end
-    always_comb begin
-       for(int i = 0; i<NUM_OF_VECTOR_REG; i++)
-          weight[i] = vec_reg_req_port[i].access_length;
-    end 
 
     warbiter_rr #(.VECTOR_IN(NUM_OF_PORT))
-                xbar_arbiter[NUM_OF_VECTOR_REG-1:0] (.clk(clk),
-                                                     .reset(reset),
-                                                     .request_vector(request),
-                                                     .weight(weight),
-                                                     .grant(grant)
-                                                    );
-    
+                xbar_arbiter[NUM_OF_VECTOR_REG] (.clk(clk),
+                                                 .reset(reset),
+                                                 .request_vector(request),
+                                                 .weight(weight),
+                                                 .grant(grant)
+                                                );
+
+    //reverse the grant for port valid calculation
+    always_comb begin
+       for(int i=0; i<NUM_OF_VECTOR_REG; i++) begin
+          for(int j=0; j<NUM_OF_PORT; j++) begin
+             grant_rev[i][j] = grant[j][i];
+          end
+       end
+    end
+    always_comb begin
+       for(int i = 0; i<NUM_OF_PORT; i++) begin
+             reg_req_grant_comb[i] =  |grant_rev[i];
+             rsp_vld_comb[i] = |grant_rev[i];
+       end
+    end
     //1cc delay to make the grant in sync with the vector register data.
     always_ff@(posedge clk or negedge reset) begin
        if(!reset) begin
           for(int i = 0; i<NUM_OF_PORT; i++) begin
+             reg_req_grant[i] <= 0;
              rsp_vld[i] <= 0;
              rsp_addr_port[i] <= 0;
           end
        end
        else begin
-          for(int i = 0; i<NUM_OF_PORT; i++) begin
-             rsp_vld[i] <= |grant[i];
-             if(|grant[i]) begin
-                for(int j=0; j<NUM_OF_VECTOR_REG; j++) begin
-                   if(grant[i][j]) rsp_addr_port[i] <= j;
+          reg_req_grant <= reg_req_grant_comb;
+          rsp_vld <= rsp_vld_comb;
+          for(int i=0; i<NUM_OF_VECTOR_REG; i++) begin
+             for(int j=0; j<NUM_OF_PORT; j++) begin
+                if(grant[i][j]) begin
+                   rsp_addr_port[j] <= i;
                 end
              end
           end
@@ -65,9 +88,9 @@ module crossbar_switch (input clk,
     end
 
     always_comb begin
-        for(int i = 0; i<NUM_OF_PORT; i++) begin
-           for(int j = 0; j<NUM_OF_VECTOR_REG; j++) begin
-              if(grant[i][j] && vec_reg_req_port[i].vld && (vec_reg_req_port[i].vec_reg_ptr == j)) begin
+        for(int i = 0; i<NUM_OF_VECTOR_REG; i++) begin
+           for(int j = 0; j<NUM_OF_PORT; j++) begin
+              if(grant[i][j] && vec_reg_req_port[i].vld && (vec_reg_req_port[i].vec_reg_ptr == i)) begin
                  vector_read_addr_port[j] = vec_reg_req_port[i].addr;
                  vector_write_port[j] = (vec_reg_req_port[i].access_type == WRITE_REQ);
                  vector_write_addr_port[j] = vec_reg_req_port[i].addr;

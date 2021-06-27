@@ -35,11 +35,14 @@ module cache # (parameter CORE_ID = 0)
     //cache memory
     logic [DATA_FIELD_WIDTH-1:0] cache_memory [MAX_ASSOCIATIVITY][CACHE_BLOCK_SIZE]; //8B x 32 x 8 = 2048B(2KB)
     logic [CACHE_BLOCK_SIZE-1:0] cache_hit_count [MAX_ASSOCIATIVITY];//to count number of hit to calculate LRU cache.
-    logic [CACHE_BLOCK_SIZE-1:0] lru_block;
     logic cache_hit, cache_miss;
     logic cache_hit_arr1 [MAX_ASSOCIATIVITY];
     logic cache_miss_arr1 [MAX_ASSOCIATIVITY];
     logic [MAX_ASSOCIATIVITY] cache_hit_arr2, cache_miss_arr2;
+
+    //LRU block for cache retention.
+    logic lru_vld;
+    logic [CACHE_BLOCK_SIZE-1:0] lru_block;
 
 
     always_ff @(posedge clk or negedge reset) begin
@@ -238,6 +241,8 @@ module cache # (parameter CORE_ID = 0)
        end    
     end
 
+    assign lru_vld = & (block_en ~^ block_vld);
+
     //update cache when cache miss
     always_ff @(posedge clk or negedge reset) begin
        if(!reset) begin
@@ -250,7 +255,7 @@ module cache # (parameter CORE_ID = 0)
           else if (rsp_rcvd_count==CACHE_BLOCK_SIZE)
              rsp_rcvd_count <= 0;
           for(int i=0; i<MAX_ASSOCIATIVITY; i++) begin
-             if((!block_vld[i] || (block_vld[i] && (i==lru_block))) && block_en[i] && req_ff.vld) begin
+             if((!block_vld[i] || (lru_vld && (i==lru_block))) && block_en[i] && req_ff.vld) begin
                 block_addr[i] <= req_ff.addr & 64'h7;
                 cache_memory[i][mem_rsp.addr[$clog2(CACHE_BLOCK_SIZE)-1:0]] <= mem_rsp.data;
              end
