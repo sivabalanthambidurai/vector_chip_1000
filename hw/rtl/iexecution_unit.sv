@@ -42,7 +42,8 @@ module iexecution_unit (input clk,
     logic buffer0_full, buffer1_full, buffer0_empty, buffer1_empty,
           buffer0_rsp, buffer1_rsp;
     //exe_unit_active : Indicates that execution unit is Active.
-    logic exe_unit_active, exe_unit_active_ff;
+    logic exe_stall, stall_next_cycle;
+    logic exe_unit_active;
     logic all_lanes_busy;
     logic [NUM_OF_LANES-1:0] busy_vector;
     logic [$clog2(NUM_OF_LANES)-1:0] next_free_lane;//indicates the next free lane.
@@ -135,7 +136,7 @@ module iexecution_unit (input clk,
                     .req_data(opcode0),
                     .full(buffer0_full),
                     //buffer output
-                    .rsp(buffer0_rsp && !exe_unit_active_ff),
+                    .rsp(buffer0_rsp && !exe_stall),
                     .empty(buffer0_empty),
                     .rsp_data(buffer0_opcode)
                    );
@@ -148,19 +149,20 @@ module iexecution_unit (input clk,
                     .req_data(opcode1),
                     .full(buffer1_full),
                     //buffer output
-                    .rsp(buffer1_rsp && !exe_unit_active_ff),
+                    .rsp(buffer1_rsp && !exe_stall),
                     .empty(buffer1_empty),
                     .rsp_data(buffer1_opcode)
                    );
 
     assign inst_buff_full = buffer0_full || buffer1_full;
 
-    arbiter_rr # (.VECTOR_IN(2))
-               exe_arb (.clk(clk),
-                        .reset(reset),
-                        .request_vector({!buffer1_rsp && !buffer1_empty && !exe_unit_active, !buffer0_rsp && !buffer0_empty && !exe_unit_active}),
-                        .grant({buffer1_rsp, buffer0_rsp})
-                       );
+    arbiter_rr2 # (.VECTOR_IN(2))
+                exe_arb (.clk(clk),
+                         .reset(reset),
+                         .stall(exe_stall),
+                         .request_vector({!buffer1_empty,!buffer0_empty}),
+                         .grant({buffer1_rsp, buffer0_rsp})
+                        );
    
     //opcode fetching logic.
     always_ff@(posedge clk or negedge reset) begin
@@ -170,7 +172,7 @@ module iexecution_unit (input clk,
           reg2 <= 0;
           reg3 <= 0;
        end
-       else if(buffer0_rsp) begin
+       else if(buffer0_rsp && !exe_stall) begin
           if(opcode == MOV_IMM) begin
              opcode <= MOV_IMM_DATA;
              movimm <= buffer0_opcode;
@@ -182,7 +184,7 @@ module iexecution_unit (input clk,
              reg3 <= buffer0_opcode[7:0];
           end
        end
-       else if(buffer1_rsp) begin
+       else if(buffer1_rsp && !exe_stall) begin
           if(opcode == MOV_IMM) begin
              opcode <= MOV_IMM_DATA;
              movimm <= buffer1_opcode;
@@ -212,7 +214,35 @@ module iexecution_unit (input clk,
        end
     end
 
-    `flip_flop(clk,reset,exe_unit_active,exe_unit_active_ff)
+    //execution unit stall logic
+    always_comb begin
+       exe_stall  = ((stall_next_cycle && !exe_unit_active) || exe_unit_active) ? 1 : 0;
+    end
+
+   always_ff @(posedge clk or negedge reset) begin
+      if (!reset) begin
+         stall_next_cycle <= 0;
+      end
+      else if (!stall_next_cycle && !exe_stall
+               && ((buffer0_rsp && stall_next_cycle_vld(vopcode_t'(buffer0_opcode[31:24])))
+               ||  (buffer1_rsp && stall_next_cycle_vld(vopcode_t'(buffer1_opcode[31:24]))))) begin
+         stall_next_cycle <= 1;
+      end
+      else begin
+         stall_next_cycle <= 0;
+      end
+   end
+    
+    function stall_next_cycle_vld(input opcode_t opcode);
+    begin
+       if((opcode == LV) || (opcode == SV)) begin
+          stall_next_cycle_vld = 1;
+       end
+       else begin
+          stall_next_cycle_vld = 0;
+       end
+    end
+    endfunction
    
     //execution unit
     always_ff @(posedge clk or negedge reset) begin
@@ -312,7 +342,7 @@ module iexecution_unit (input clk,
                           else if (!load_store_req.vld && load_store_unit_busy) begin
                              exe_unit_active <= 1;
                           end
-                          else if(load_store_req.vld && exe_unit_active) begin
+                          else if (load_store_req.vld && exe_unit_active) begin
                              exe_unit_active <= 0;
                              load_store_req <= 0;
                           end
@@ -335,7 +365,7 @@ module iexecution_unit (input clk,
                           else if (!load_store_req.vld && load_store_unit_busy) begin
                              exe_unit_active <= 1;
                           end
-                          else if(load_store_req.vld && exe_unit_active) begin
+                          else if (load_store_req.vld && exe_unit_active) begin
                              exe_unit_active <= 0;
                              load_store_req <= 0;
                           end                         
