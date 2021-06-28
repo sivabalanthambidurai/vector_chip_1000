@@ -85,7 +85,7 @@ module ifetch_unit (input clk,
    end
 
    //a single cycle indicating a valid opcode to the execution unit 
-   assign  opcode_vld = icache_rsp.vld;
+   assign  opcode_vld = pipe_active && icache_rsp.vld;
    //execution unit interface
    assign opcode0 = (icache_rsp.vld) ? icache_rsp.data[31:0] : 0;
    assign opcode1 = (icache_rsp.vld) ? icache_rsp.data[63:32] : 0;

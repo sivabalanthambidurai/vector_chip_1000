@@ -56,7 +56,7 @@ module cache # (parameter CORE_ID = 0)
           tag <= tag_mask & req.addr[SET_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)-1:$clog2(CACHE_BLOCK_SIZE)];
           set <= set_mask & req.addr[TAG_BIT_WIDTH+$clog2(CACHE_BLOCK_SIZE)-1:$clog2(CACHE_BLOCK_SIZE)];
        end
-       else if (rsp_rcvd_count==CACHE_BLOCK_SIZE) begin //request will be cleared once we recieve all the response.
+       else if (cache_hit || (rsp_rcvd_count==CACHE_BLOCK_SIZE)) begin //request will be cleared once we recieve all the response.
           req_ff <= 0;
        end
     end
