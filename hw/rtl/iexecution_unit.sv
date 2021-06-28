@@ -43,7 +43,7 @@ module iexecution_unit (input clk,
           buffer0_rsp, buffer1_rsp;
     //exe_unit_active : Indicates that execution unit is Active.
     logic exe_stall, stall_next_cycle;
-    logic exe_unit_active;
+    logic exe_unit_active, exe_unit_active_ff;
     logic all_lanes_busy;
     logic [NUM_OF_LANES-1:0] busy_vector;
     logic [$clog2(NUM_OF_LANES)-1:0] next_free_lane;//indicates the next free lane.
@@ -160,7 +160,7 @@ module iexecution_unit (input clk,
                 exe_arb (.clk(clk),
                          .reset(reset),
                          .stall(exe_stall),
-                         .request_vector({!buffer1_empty,!buffer0_empty}),
+                         .request_vector({!buffer1_rsp && !buffer1_empty,!buffer0_rsp && !buffer0_empty}),
                          .grant({buffer1_rsp, buffer0_rsp})
                         );
    
@@ -249,8 +249,10 @@ module iexecution_unit (input clk,
        if(!reset) begin
           EXE_VECTOR_REG <= 0;
           exe_unit_active <= 0;
+          exe_unit_active_ff <= 0;
        end
        else begin
+          exe_unit_active_ff <= exe_unit_active;
           case (opcode)
              NO_OP   : begin
                        end
@@ -329,7 +331,10 @@ module iexecution_unit (input clk,
              DIVSVD  : begin
                        end
              LV      : begin
-                          if(!load_store_unit_busy) begin
+                          if(!load_store_unit_busy && !load_store_req.vld && exe_unit_active) begin
+                             exe_unit_active <= 0;
+                          end
+                          else if(!load_store_unit_busy && !exe_unit_active_ff) begin
                              exe_unit_active <= 1;
                              load_store_req.vld <= 1;
                              load_store_req.access_type <= READ_REQ;
@@ -339,11 +344,7 @@ module iexecution_unit (input clk,
                              load_store_req.addr <= read_data;
                              load_store_req.data <= 0;
                           end
-                          else if (!load_store_req.vld && load_store_unit_busy) begin
-                             exe_unit_active <= 1;
-                          end
                           else if (load_store_req.vld && exe_unit_active) begin
-                             exe_unit_active <= 0;
                              load_store_req <= 0;
                           end
                        end
@@ -352,7 +353,10 @@ module iexecution_unit (input clk,
              LVWS    : begin
                        end
              SV      : begin
-                          if(!load_store_unit_busy) begin
+                          if(!load_store_unit_busy && !load_store_req.vld && exe_unit_active) begin
+                             exe_unit_active <= 0;
+                          end
+                          else if(!load_store_unit_busy && !exe_unit_active_ff) begin
                              exe_unit_active <= 1;
                              load_store_req.vld <= 1;
                              load_store_req.access_type <= WRITE_REQ;
@@ -362,11 +366,7 @@ module iexecution_unit (input clk,
                              load_store_req.addr <= read_data;
                              load_store_req.data <= 0;
                           end
-                          else if (!load_store_req.vld && load_store_unit_busy) begin
-                             exe_unit_active <= 1;
-                          end
                           else if (load_store_req.vld && exe_unit_active) begin
-                             exe_unit_active <= 0;
                              load_store_req <= 0;
                           end                         
                        end
