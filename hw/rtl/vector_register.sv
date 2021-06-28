@@ -21,7 +21,7 @@ module vector_register (input clk,
   
   always_ff@(posedge clk or posedge reset)
   begin
-    if(reset)
+    if(!reset)
     begin
       foreach(vector_register_array[i])
       begin

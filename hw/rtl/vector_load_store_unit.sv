@@ -91,7 +91,8 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
      end
   end
 
-  assign request_ready = ((cntrl_req_ff.access_type == READ_REQ) || (cntrl_req_ff.access_type == WRITE_REQ));
+  assign request_ready = (((cntrl_req_ff.access_type == READ_REQ) && (req_sent_count < request_count)) ||
+                          ((cntrl_req_ff.access_type == WRITE_REQ) && (req_sent_count < reg_rsp_rcvd)));
   assign response_ready = (((cntrl_req_ff.access_type == READ_REQ) && read_complete) || (cntrl_req_ff.access_type == WRITE_REQ));
   assign write_ready = (reg_rsp_rcvd == cntrl_req_ff.access_length);
   assign read_complete = (reg_rsp_rcvd == cntrl_req_ff.access_length);
@@ -100,8 +101,9 @@ module vector_load_store_unit # (parameter CORE_ID = 8)
      if(!reset) begin
         mem_req <= 'h0;
         req_sent_count <= 0;
+        vrsp_buff_rptr <= 0;
      end
-     else if(request_ready && (req_sent_count < request_count) && (!mem_req.vld || (mem_req.vld && req_grant))) begin
+     else if(request_ready && (!mem_req.vld || (mem_req.vld && req_grant))) begin
         mem_req.vld <= 1;
         mem_req.access_type <= cntrl_req_ff.access_type;
         mem_req.access_length <= cntrl_req_ff.access_length;

@@ -191,9 +191,9 @@ module iexecution_unit (input clk,
           end
           else begin
              opcode <= vopcode_t'(buffer1_opcode[31:24]);
-             reg1 <= buffer0_opcode[23:16];
-             reg2 <= buffer0_opcode[15:8];
-             reg3 <= buffer0_opcode[7:0];
+             reg1 <= buffer1_opcode[23:16];
+             reg2 <= buffer1_opcode[15:8];
+             reg3 <= buffer1_opcode[7:0];
           end
        end
     end

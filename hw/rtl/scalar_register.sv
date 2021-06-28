@@ -29,7 +29,7 @@ module scalar_register (input clk,
   
   always_ff@(posedge clk or posedge reset)
   begin
-    if(reset)
+    if(!reset)
     begin
       foreach(scalar_register_array[i])
       begin

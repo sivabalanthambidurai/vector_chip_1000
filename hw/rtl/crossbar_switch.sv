@@ -26,7 +26,7 @@ module crossbar_switch (input clk,
     logic [NUM_OF_PORT-1:0] grant_rev [NUM_OF_VECTOR_REG];
 
     //grant logic
-    logic rsp_vld_comb [NUM_OF_PORT-1:0], rsp_vld_ff [NUM_OF_PORT-1:0];
+    logic rsp_vld_comb [NUM_OF_PORT-1:0];
     logic [$clog2(VECTOR_REG_DEPTH)-1:0] rsp_addr_port_ff [NUM_OF_PORT-1:0];
 
     always_comb begin
@@ -69,12 +69,12 @@ module crossbar_switch (input clk,
     always_ff@(posedge clk or negedge reset) begin
        if(!reset) begin
           for(int i = 0; i<NUM_OF_PORT; i++) begin
-             rsp_vld_ff[i] <= 0;
+             rsp_vld[i] <= 0;
              rsp_addr_port_ff[i] <= 0;
           end
        end
        else begin
-          rsp_vld_ff <= rsp_vld_comb;
+          rsp_vld <= rsp_vld_comb;
           for(int i=0; i<NUM_OF_VECTOR_REG; i++) begin
              for(int j=0; j<NUM_OF_PORT; j++) begin
                 if(grant[i][j]) begin
@@ -87,7 +87,6 @@ module crossbar_switch (input clk,
 
     //1cc delay to make the grant in sync with the vector register data.
     generate for(genvar i=0; i<NUM_OF_PORT; i++) begin
-       `flip_flop(clk,reset,rsp_vld_ff[i],rsp_vld[i])
        `flip_flop(clk,reset,rsp_addr_port_ff[i],rsp_addr_port[i])
     end endgenerate
 

@@ -15,22 +15,21 @@ module vector_mapper # (parameter MAP_PORT = 8)
                       output reg [VECTOR_REG_WIDTH-1:0] data_port_out [MAP_PORT-1:0]                      
                      );
 
-    logic latched [MAP_PORT-1:0];
-
     //mapping logic.
     //Note : It is recommended not have two addr port maps to 
     //same data port. If two register addr port maps to same 
-    //data port, only the first port will be to mapped the 
-    //data port.
+    //data port, only the port with highest priority will be to 
+    //mapped the data port.(Prioirty port0(highest) to port7(lowest))
+
     always_comb begin
-       for(bit [$clog2(MAP_PORT):0] i=0; i<MAP_PORT; i++) begin
-          for(bit [$clog2(VECTOR_REG_DEPTH) :0] j=0; j<VECTOR_REG_DEPTH; j++) begin
-             if(vld[i] && (j==addr_port[i]) && !latched[j]) begin
-                latched[j] = 1;
+       for(int i=MAP_PORT-1; i>=0; i--) begin
+          for(int j=0; j<VECTOR_REG_DEPTH; j++) begin
+             if(vld[i] && (j==addr_port[i])) begin
                 data_port_out[i] = data_port_in[addr_port[i]];
              end  
           end
        end
     end
+
  
 endmodule
